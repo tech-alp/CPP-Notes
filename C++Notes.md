@@ -8,20 +8,20 @@
 
 - LValue -> value category
 
-```
-                          expersion
-                           /     \ 
-                          /       \
-                         /         \
-                    glvalue       rvalue
-                      / \          / \
-                     /   \        /   \
-                    /     \      /     \
-                lvalue     xvalue     prvalue
+```txt
+              expersion
+               /     \ 
+              /       \
+             /         \
+        glvalue       rvalue
+          / \          / \
+         /   \        /   \
+        /     \      /     \
+    lvalue     xvalue     prvalue
 ```
 **Rvalue:** Taşınabilir fakat bellekte herhangi bir adresi yok.
 
-__Lvalue:__ güvenli bir şekilde çalışmaz.
+__Lvalue:__ Bellekte yer tutar fakat güvenli bir şekilde çalışmayabilir.
 
 > Sol taraf referansları ilk değer ile başlatılmak zorundadır.
 
@@ -161,46 +161,50 @@ void func(int);
 
 1. **Variadic convertion**
 
+    ```C++
     void func(...); //variadic func.
+    ```
 
 1. **User-defined Convertion**
 
-Programlayıcı tarafından tanımlanan dönüşümlere denir.
-```C++
-struct Data  {
-    Data() = default;
-    Data(int);
-}
-int main() {
-    Data mydata;
-    mydata = 10; //user-defined type
-}
-```
+    Programlayıcı tarafından tanımlanan dönüşümlere denir.
+    ```C++
+    struct Data  {
+        Data() = default;
+        Data(int);
+    }
+    int main() {
+        Data mydata;
+        mydata = 10; //user-defined type
+    }
+    ```
 
-3. Standard Convertion
+3. __Standard Convertion__
 
-- int    ---> double
+    - int    ---> double
+    
+    - double ---> int
+    
+    - double ---> char
+    
+    - enum   ---> int
+    
+    - int*   ---> void*
+    
+    gibi bazı dönüşümler derleyicinin implicitly     dönüşümlerine örnektir.
+    
+    ```C++
+    void func(int);
+    void func(double);
+    void func(char);
+    int main() {
+        func(12.f); //Hangi func. çağrılır.
+    }
+    ```
+    > **func(double)** çağrılacaktır. Çünkü float'tan double'a promotion vardır.
 
-- double ---> int
-
-- double ---> char
-
-- enum   ---> int
-
-- int*   ---> void*
-
-gibi bazı dönüşümler derleyicinin implicitly dönüşümlerine örnektir.
-
-```C++
-void func(int);
-void func(double);
-void func(char);
-int main() {
-    func(12.f); //Hangi func. çağrılır.
-}
-```
-**func(double)** çağrılacaktır. Çünkü float'tan double'a promotion vardır.
-
+<!--
+-->
 
 1. exact match(tam uyum)
 
@@ -208,15 +212,15 @@ int main() {
 
 3. convertion
 
-Yukarıdaki 3 durum içerisinde fonksiyon sırası ile uygun olan
-fonksiyonu arar(exact match > promotion > convertion)
+Yukarıdaki 3 durum içerisinde fonksiyon sırası ile uygun olan fonksiyonu derleyici arar.(exact match > promotion > convertion)
+Eğerki exact match yok ise promortion'a bakılır o da yok ise convertiona bakılır. Eğerki birden fazla aynı işlevde convertion olacak fonksiyon varsa ambuigty olur.
 
 ### Exact-Match
-✔LValue to rvalue convertion
+- LValue to rvalue convertion
 
-✔T* to const T* convertion
+- T* to const T* convertion
 
-✔function to pointer convertion 
+- function to pointer convertion 
 
 exact match'tir.
 
@@ -228,4 +232,114 @@ int main() {
     func(x); //Lvalue to rvalue exact-match olacktır.
 }
 ```
+
+### Promotion
+
+- Integral promotion
+
+    int'ten küçük türlerden int türüne yapılan dönüşeme denir.
+
+    - char --> int
+    - signed char --> int
+    - unsigned char -> int
+    - bool --> int
+    - signed short --> int
+
+float --> double
+
+C ve C++ dillerinde
+
+    1. Fonksiyonların parametre değişkenleri dizi (array) olmaz.
+    2. Fonksiyonların geri dönüş değer türleri dizi(array) olmaz.
+
+```C++
+//function redecleration
+void func(int);
+void func(const int);
+```
+- **const overloading**
+    ```C++
+        //function overloading
+        void func(int*);
+        void func(const int*);
+    ```
+
+---
+
+<br></br>
+
+## Numaralandırma Türleri
+
+#### Enum:
+
+> C'den fraklı olarak underlying type vardır.
+
+```C++
+enum Color : char {
+WHITE,
+GREEN,
+RED,
+BLACK
+};
+```
+#### Enum classes:
+> Underlying type vardır.
+
+> Forward decleration vardır.
+
+```C++
+enum class Color : char;
+```
+
+---
+
+## Trü Dönüşüm Operatörleri:
+
+- static_cast
+- const_cast
+- reinterpret_cast
+- dynamic_cast
+
+#### C-style casting
+Tüm cast işlemlerinde '()' parantez operandı içerisinde cast edilecek type tanımlarak yapılır.
+
+````C++
+//C style casting
+const int x = 10;
+int* ptr = (int*)&x;
+*ptr = 48; //Valid but undefined behaviour
+````
+
+#### static_cast
+> int*'dan void*'a implicit type convertion vardır.
+
+> int*'dan void*'a veya void*'dan int*'a hem static_cast hemde reinterpret_cast kullanılabilir.
+
+````C++
+int x = 10;
+void* sptr = static_cast<void*>(&x);
+void* rptr = reinterpret_cast<void*>(&x);
+````
+
+#### const_cast
+````C++
+const int x = 10;
+int* ptr = const_cast<int*>(&x);
+*ptr = 48; //Valid but undefined behaviour
+````
+
+#### reinterpret_cast
+```C++
+int x = 145981;
+char* c = reinterpret_cast<char*>(&x);
+for(int i = 0; i < sizeof(x); ++i) {
+    std::cout << c[i] << "\n";
+}
+int* y = reinterpret_cast<int*>(c);
+```
+
+---
+
+
+
 
