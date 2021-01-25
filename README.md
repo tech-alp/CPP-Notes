@@ -293,7 +293,7 @@ enum class Color : char;
 
 ---
 
-## Trü Dönüşüm Operatörleri:
+## Tür Dönüşüm Operatörleri:
 
 - static_cast
 - const_cast
