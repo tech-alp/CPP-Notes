@@ -8,6 +8,8 @@
 
 - LValue -> value category
 
+## Reference
+
 ```txt
               expersion
                /     \ 
@@ -21,7 +23,11 @@
 ```
 **Rvalue:** Taşınabilir fakat bellekte herhangi bir adresi yok.
 
-__Lvalue:__ Bellekte yer tutar fakat güvenli bir şekilde çalışmayabilir.
+__Lvalue:__ İsim formundaki yani bellekte yer tutan nesnelerin değer kategorisidir.
+
+> Bir sol taraf referansı bir "sağ taraf değeri" ifadesine bağlanamaz.
+
+> Bir sağ taraf referansı bir "sol taraf değeri" ifadesine bağlanamaz. Fakat const sol taraf referansı "sağ taraf değeri" ifadesine bağlanabilir.
 
 > Sol taraf referansları ilk değer ile başlatılmak zorundadır.
 
@@ -51,6 +57,20 @@ ifadesine bağlanabilir.
 > İsim formundaki tüm ifadelerin değer kategorisi Lvalue
 expersion'dır.
 
+
+```C++
+int  foo();
+int& func();
+int main() {
+    int& a = func(); // valid
+    int b = foo();   // valid
+    int& c = func(); // invalid(Lvalue ref. can't bind r value)
+    const int& d = foo(); //valid. [*]
+}
+```
+
+`const int& d = foo()` şeklinde belirtilen kodun geçerli olmasının sebebi compiler `const int temp = foo();` şekilinde bir kod üretir ve daha sonra `const int& d = temp` olarakoluşturul    böylece lvalue referans sol değer ifadesinebağlanır. 
+
 > Bir ifadenin data type başka value category'si başkadır.
 ````C++
 int&& ref = 10;
@@ -58,10 +78,48 @@ int&& ref = 10;
 //data type ise sağ taraf referansıdır.(RValue reference)
 ````
 
+> const lvalue reference tipinde bir değişkene sağ taraf değeri ile ilk değer vermenin en önemli kullanımı move schematic'tir. Sınıf yapılarında bunu tekrar inceleyeceğiz.
+
+```C++
+double dval{2.456};
+const int& x = dval; //valid
+const int& y(dval); //valid
+const int& z{dval}; //invalid. Narrowing conservion
+```
+
+- `int x(10);` --> direct initialization
+- `int x{};`   --> value, uniform, bracet initialization
+- `int x{10};` --> direct list initialization
+
+**Uniform initialization neden ekledi?**
+1. Neye ilk değer verirsen ver her zaman kullanılabilir.
+1. Narrowing conversion durumunu engellemek için.
+1. Most vexing parse(Scott Meyers tarafından dile ekledi)
+
+__Most vexig parse__
+```C++
+#include <iostream>
+
+struct A {
+
+};
+
+struct B {
+    B(A) {
+        std::cout << "B constructor\n"; 
+    }
+};
+
+int main() {
+    B b(A()); //function decleration
+}
+```
+Yukarıdaki örnekte derleyici nesne bildirimi yerine önceliği fonksiyon bildirimine verir. Tipik bir `most verxing parse` örneğidir. Fakat `B b{A()}`şeklinde olsaydı bu bir nesne bildirimi olacak ve standart outputa ***B constructor*** yazacaktı.
+
 <!--
     Example 
     * italic sentences *
-    "---" lines
+    --- lines
     - item
     * item
     + item
@@ -69,6 +127,7 @@ int&& ref = 10;
     [Code](#Value-Category) just example
 
     You can do blocks of code by surround it with 3 backticks()
+    ```
 
     <style>
     p {
@@ -88,11 +147,61 @@ int&& ref = 10;
 
 * VIP --> Very Important Person
 
+Auto aşağıdaki şekillerdeki gibi kullanılabilir.
 ````C++
 auto x = expr;
 auto& x = expr;
 auto&& x = expr;
 ````
+
+Aşağıdaki şekilde kullanılması durumda eğer reference ve const varsa her ikiside düşer.
+```C++
+const int x = 10;
+auto y = x; // int y = x;
+
+int& r = x;
+auto y2 = r; // int y2 = r;
+
+const int& z = x;
+auto y3 = z; // int y3 = z;
+```
+> __İstisna:__ `auto p = "enes";` ilk değer verme kullanılması durumunda derleyici `const char* temp = "enes";` şeklinde bir kod üretir. Daha sonra [auto](Auto-Type-Deduction) ifadesi yerine `const char* p = temp` gelecektir. 
+
+Reference ile kullanılması durumda
+```C++
+int x = 10;
+int& r = x;
+auto& y = r; // int& y = r;
+
+const int& r2 = x;
+auto& y2 = r2; // const int& y2 = x;
+```
+
+Son olarak `auto&& x = expr` için aşağıdaki durumların olması durumu sırası ile inceleyelim.
+
+- İlk değer veren ifade pr value expression ise,
+
+- İlk değer veren ifade r value expression ise,
+
+- İlk değer veren ifade x value expression ise
+
+| expr |  auto  | çıkarım(x) |
+| -- | --- | -- |
+| T& |  &  | T& |
+| T& |  && | T& |
+| T&& |  &  | T& |
+| T&& |  &&  | T&& |
+
+__NOT:__ Basit oalrak çıkarımı şu şekilde yapabiliriz. Eğer `expr` sol taraf ifadesi ise `x` sol taraf referansı, eğer `expr` sağ taraf ifadesi ise `x` sağ taraf referansı olacaltır.
+
+```C++
+int y = 10;
+auto&& r = 10; // sağ taraf ifadesi bu yüzden int&& r = 10 olacaktır.
+auto&& r2 = y; // sol taraf ifadesi bu yüzden int& r2 = y; olacaktır.
+```
+
+Eğer ki `auto&&` bir sol taraf ifadesine bağlanılması durumunda `T& &&` çıkarımı yapılır. Burada referans bozulması(reference collapsing) olur. Böylece reference düşer `T&`şeklini alır.
+
 
 ---
 
@@ -339,7 +448,4 @@ int* y = reinterpret_cast<int*>(c);
 ```
 
 ---
-
-
-
 
