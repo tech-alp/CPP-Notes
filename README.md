@@ -1,3 +1,23 @@
+<!--
+    Example 
+    * italic sentences *
+    --- lines
+    - item
+    * item
+    + item
+    <website https//....>
+    [Code](#Value-Category) just example
+
+    You can do blocks of code by surround it with 3 backticks()
+    ```
+
+    <style>
+    p {
+        color: orange
+    }
+    </style>
+-->
+
 ## Value Category
 
 - RValue reference -> type category.
@@ -87,9 +107,9 @@ const int& y(dval); //valid
 const int& z{dval}; //invalid. Narrowing conservion
 ```
 
-- `int x(10);` --> direct initialization
-- `int x{};`   --> value, uniform, bracet initialization
-- `int x{10};` --> direct list initialization
+- `int x(10);` &#8594; direct initialization
+- `int x{};`   &#8594; value, uniform, bracet initialization
+- `int x{10};` &#8594; direct list initialization
 
 **Uniform initialization neden ekledi?**
 1. Neye ilk değer verirsen ver her zaman kullanılabilir.
@@ -115,26 +135,6 @@ int main() {
 }
 ```
 Yukarıdaki örnekte derleyici nesne bildirimi yerine önceliği fonksiyon bildirimine verir. Tipik bir `most verxing parse` örneğidir. Fakat `B b{A()}`şeklinde olsaydı bu bir nesne bildirimi olacak ve standart outputa ***B constructor*** yazacaktı. 
-
-<!--
-    Example 
-    * italic sentences *
-    --- lines
-    - item
-    * item
-    + item
-    <website https//....>
-    [Code](#Value-Category) just example
-
-    You can do blocks of code by surround it with 3 backticks()
-    ```
-
-    <style>
-    p {
-        color: orange
-    }
-    </style>
--->
 
 ---
 
@@ -165,7 +165,7 @@ auto y2 = r; // int y2 = r;
 const int& z = x;
 auto y3 = z; // int y3 = z;
 ```
-> __İstisna:__ `auto p = "enes";` ilk değer verme kullanılması durumunda derleyici `const char* temp = "enes";` şeklinde bir kod üretir. Daha sonra [auto](Auto-Type-Deduction) ifadesi yerine `const char* p = temp` gelecektir. 
+> __İstisna:__ `auto p = "enes";` ilk değer verme kullanılması durumunda derleyici `const char* temp = "enes";` şeklinde bir kod üretir. Daha sonra [auto](#Auto-Type-Deduction) ifadesi yerine `const char* p = temp` gelecektir. 
 
 Reference ile kullanılması durumda
 ```C++
@@ -192,7 +192,7 @@ Son olarak `auto&& x = expr` için aşağıdaki durumların olması durumu sıra
 | T&& |  &  | T& |
 | T&& |  &&  | T&& |
 
-__NOT:__ Basit oalrak çıkarımı şu şekilde yapabiliriz. Eğer `expr` sol taraf ifadesi ise `x` sol taraf referansı, eğer `expr` sağ taraf ifadesi ise `x` sağ taraf referansı olacaltır.
+__NOT:__ Basit olarak çıkarımı şu şekilde yapabiliriz. Eğer `expr` sol taraf ifadesi ise `x` sol taraf referansı, eğer `expr` sağ taraf ifadesi ise `x` sağ taraf referansı olacaltır.
 
 ```C++
 int y = 10;
@@ -270,9 +270,19 @@ void func(int);
 
 1. **Variadic convertion**
 
-    ```C++
-    void func(...); //variadic func.
-    ```
+__İstisna:__ C'de variadic fonksiyonlar sadece *elipsis(...)* kullanılarak tanımlanamaz. C++ bu gerçerlidir.
+
+```C++
+//variadic func.
+void func(...); // 1
+void func(int x, ...); // 2
+void func(int x, int y, ...); // 3
+
+int main()
+{
+    funcR(1,2,3,4,5); // 3 çağrılır.
+}
+```
 
 1. **User-defined Convertion**
 
@@ -290,15 +300,15 @@ void func(int);
 
 3. __Standard Convertion__
 
-    - int    ---> double
+    - int    &#8594; double
     
-    - double ---> int
+    - double &#8594; int
     
-    - double ---> char
+    - double &#8594; char
     
-    - enum   ---> int
+    - enum   &#8594; int
     
-    - int*   ---> void*
+    - int*   &#8594; void*
     
     gibi bazı dönüşümler derleyicinin implicitly     dönüşümlerine örnektir.
     
@@ -319,17 +329,18 @@ void func(int);
 
 2. promotion(terfi-yükseltme)
 
-3. convertion
+3. conversion
 
 Yukarıdaki 3 durum içerisinde fonksiyon sırası ile uygun olan fonksiyonu derleyici arar.(exact match > promotion > convertion)
-Eğerki exact match yok ise promortion'a bakılır o da yok ise convertiona bakılır. Eğerki birden fazla aynı işlevde convertion olacak fonksiyon varsa ambuigty olur.
+
+Eğer ki exact match yok ise promortion'a bakılır o da yok ise conversiona bakılır. Eğer ki birden fazla aynı işlevde conversion olacak fonksiyon varsa ambiguity olur.
 
 ### Exact-Match
-- LValue to rvalue convertion
+- LValue to rvalue conversion
 
-- T* to const T* convertion
+- T* to const T* conversion
 
-- function to pointer convertion 
+- Function to pointer conversion 
 
 exact match'tir.
 
@@ -348,30 +359,30 @@ int main() {
 
     int'ten küçük türlerden int türüne yapılan dönüşeme denir.
 
-    - char --> int
-    - signed char --> int
-    - unsigned char -> int
-    - bool --> int
-    - signed short --> int
+    - char &#8594; int
+    - signed char &#8594; int
+    - unsigned char &#8594; int
+    - bool &#8594; int
+    - signed short &#8594; int
 
-float --> double
+float &#8594; double
 
-C ve C++ dillerinde
+__C ve C++ dillerinde__
 
-    1. Fonksiyonların parametre değişkenleri dizi (array) olmaz.
-    2. Fonksiyonların geri dönüş değer türleri dizi(array) olmaz.
+1. Fonksiyonların parametre değişkenleri dizi (array) olmaz.
+2. Fonksiyonların geri dönüş değer türleri dizi(array) olmaz.
 
 ```C++
 //function redecleration
 void func(int);
 void func(const int);
 ```
-- **const overloading**
-    ```C++
-        //function overloading
-        void func(int*);
-        void func(const int*);
-    ```
+**const overloading**
+```C++
+ //function overloading
+ void func(int*);
+ void func(const int*);
+```
 
 ---
 
@@ -381,7 +392,7 @@ void func(const int);
 
 #### Enum:
 
-> C'den fraklı olarak underlying type vardır.
+> C'den farklı olarak underlying type vardır.
 
 ```C++
 enum Color : char {
@@ -400,6 +411,25 @@ BLACK
 enum class Color : char;
 ```
 
+[Enum class](#Enum-classes) 'ların avantajları;
+
+- Underlying type
+- Implicit cast yok
+- Scope resolution var
+
+```C++
+enum class Color {
+    White,
+    Black,
+    Green,
+    //...
+};
+int main() {
+    Color mycolor = White; //Geçersiz çünkü white, enum Color kapsama alanında
+    Color mycolor = Color::White; // Geçerli
+}
+```
+
 ---
 
 ## Tür Dönüşüm Operatörleri:
@@ -410,7 +440,7 @@ enum class Color : char;
 - dynamic_cast
 
 #### C-style casting
-Tüm cast işlemlerinde '()' parantez operandı içerisinde cast edilecek type tanımlarak yapılır.
+Tüm cast işlemlerinde `()` parantez operandı içerisinde hedef tip belirtilerek yapılır(`(type target)expr`).
 
 ````C++
 //C style casting
@@ -420,9 +450,9 @@ int* ptr = (int*)&x;
 ````
 
 #### static_cast
-> int*'dan void*'a implicit type convertion vardır.
+-  int*'dan void*'a implicit type convertion vardır.
 
-> int*'dan void*'a veya void*'dan int*'a hem static_cast hemde reinterpret_cast kullanılabilir.
+- int*'dan void*'a veya void*'dan int*'a hem static_cast hem de reinterpret_cast kullanılabilir.
 
 ````C++
 int x = 10;
@@ -436,6 +466,20 @@ const int x = 10;
 int* ptr = const_cast<int*>(&x);
 *ptr = 48; //Valid but undefined behaviour
 ````
+C'de kullanılan `strchr` fonksiyonu buna en güzel örnek olabilir.
+
+```C++
+char* Strchr(const char* p, int c) {
+    while(*p++) {
+        if(*p == c) {
+            return const_cast<char*>(p);
+        }
+    }
+    if(c == '\0')
+        return const_cast<char*>(p);
+    return nullptr;
+}
+```
 
 #### reinterpret_cast
 ```C++
