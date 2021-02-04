@@ -493,3 +493,218 @@ int* y = reinterpret_cast<int*>(c);
 
 ---
 
+#### Extern "C" Bildirimi
+
+C'de derlenmiş kütüphaneleri C++'da kullanabilmek için belirtilir.
+
+Aşağıdaki şekilde ön tanımlı sembolik sabit(`predefining symboling constant`) makrosı ile sarmalanır.
+
+```C++
+extern "C" void f1();
+extern "C" void f2();
+```
+
+```C++
+extern "C" {
+void f1();
+void f2();
+} 
+```
+
+```C++
+#ifdef _cplusplus
+extern "C" {
+#endif
+    void f1();
+    void f2();
+    void f3();
+    void f4();
+#ifdef _cplusplus
+}
+#endif
+```
+
+
+### Classes
+
+```C++
+class Myclass {
+    // class members
+    // data members(veri elemanları/öğeleri)
+    // member function
+    // type member
+
+    int mx;           // data member
+    typedef int Word; // type member
+    void func(int);   // member function
+}
+```
+
+C++ scope'lar aşağıdaki gibidir.
+- Namescape scope
+- Block scope
+- Function prototype scope
+- Function scope
+- Class scope
+
+> Sınıfın üye fonksiyonları(member func.) sınıf içerisinde yer kaplamazlar.
+
+Sınıf veri elemanları(data members)
+- non-static member
+- static member &#8594; global
+
+olabilir.
+
+Access specifier,
+
+- public
+- private
+- protected
+
+olmak üzere 3 tanedir.
+
+```C++
+// Class decleration
+// Forward decleration
+// Incomplete type
+class Myclass;
+```
+
+__const üye fonksiyonlar__
+
+```C++
+void func(T*);       // setter, mutator
+void func(const T*); // getter, accessor
+```
+```C++
+class Myclass {
+public:
+    void func();      // func(Myclass*)
+    void foo()const;  // foo(const Myclass*)
+}
+```
+
+Sınıfın const üye işlevleri const olmayan üye işlevlerini çağırmamlı.
+
+```C++
+void Myclass::func()
+{
+    foo(); // Geçersiz T* --> const T* dönüşüm vardır.
+}
+
+void Myclass::foo() const
+{
+    func(); // Geçersiz const T* --> T* dönüşüm yoktur.
+    // func(Myclass*)
+    // foo(const Myclass*)
+}
+```
+__NOT:__ const bir sınıf nesnesi ile sadece const üye işlevleri çağırabilir.
+
+
+```C++
+int main() {
+    const Myclass m;
+    //&m = const Myclass*
+    m.func(); // Geçersiz sentaks hatası const T* --> T*
+}
+```
+#### Mutable
+
+Sınıfın const bir üye fonksiyonunun sınıfın static olmayan veri elemanlarını değiştirebilmesi için veri elemanının `mutable` olması gerekir.
+
+```C++
+class Date {
+public:
+    int day_of_year()const;
+private:
+    int md,mm,my;
+    mutable debug_count{};
+}
+int Date::day_of_year() const {
+    ++debug_count; // Geçerli  debug_count mutable
+    // ...
+    return md;
+}
+```
+
+#### One Defination Rule(ODR)
+
+Bir proje içerisinde aynı varlığın birden fazla tanımı olmaz. Eğer bu varlığın tanımı aynı kaynak dosyası içerisinde olursa sentaks hatası olur. Farklı kaynaklarda olursa sentaks hatası değil fakat ill-formed  olur.
+
+
+> C++ dilinde yazılımsal öyle varlıklar var ki bu varlıkların projeyi oluşturan farklı kaynak dosyalarda birden fazla kez tanımlanması(token by token aynı olması) durumunda ill-formed değildir.
+
+```C++
+// a.cpp
+class A {
+    int x,y;
+    void func();
+}
+
+// b.cpp
+class A {
+    int x,y;
+    void func();
+}
+```
+Farklı kaynak dosyalarında tanımlandıkları halde token-by-token aynı oldukları için ill-formed değil well-formed olurlar.
+Nitekim başlık dosyalarında oluşturduğumuz class tanımını a.hpp yi a.cpp de include ettiğimiz takdirde bu geçerli olmasaydı ill-formed olurdu.
+
+__ODR'a  uyanlar;__
+- class definations
+- inline functions definations
+- inline variable definations
+- class template definations
+- ...
+
+#### inline fonksiyonlar
+
+compiler optimizasyonu,
+
+1. Derleyici compile time'da kod seçerek
+
+1. Kod optimizasyonu yaparak
+
+gerçekleştirebilir.
+
+```C++
+inline int func(int x) { return x*x+5; }
+// fonksiyona giriş kodu
+a = func(5); // a = x*x+5 yapabilir.
+// fonksiyondan çıkış kodları
+```
+
+C++ inline ile C'deki inline kurallarının farklılıkları vardır.
+
+inline fonksiyonlar;
+- tanımını (sağlıklı biçimde) başlık dosyasına koyduk böylece derleyiciye inline expansion olağanı verdik.
+- kodu expose eder.
+
+` free function = standalone function = global function `
+
+Class içerisinde fonksiyonu belirtirsek implicit inline olur.
+
+Hangi fonksiyonlar inline olarak tanımlanır?
+1. Sınıfın non-static üye işlevleri
+1. Sınıfın static üye işlevleri
+1. Sınıfın friendlik verdiği işlevler
+
+#### Sınıfların özel üye fonksiyonları(Spercial member functions)
+- default constructor
+- deconstructor
+- copy constructor
+- move constructor (C++11)
+- copy assignment
+- move assignment (C++11)
+
+
+#### Constructor(Kurucu fonksiyon)
+
+Statik ömürlü global nesneler için constructor main'den önce çağrılır.
+
+- static initialization fiasce
+- static initialization problem
+
+
+
