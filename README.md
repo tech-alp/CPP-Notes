@@ -284,7 +284,7 @@ int main()
 }
 ```
 
-1. **User-defined Convertion**
+2. **User-defined Convertion**
 
     Programlayıcı tarafından tanımlanan dönüşümlere denir.
     ```C++
@@ -313,11 +313,11 @@ int main()
     gibi bazı dönüşümler derleyicinin implicitly     dönüşümlerine örnektir.
     
     ```C++
-    void func(int);
-    void func(double);
-    void func(char);
+    void func(int);    // 1
+    void func(double); // 2
+    void func(char);   // 3
     int main() {
-        func(12.f); //Hangi func. çağrılır.
+        func(12.f); // 2
     }
     ```
     > **func(double)** çağrılacaktır. Çünkü float'tan double'a promotion vardır.
@@ -497,8 +497,6 @@ int* y = reinterpret_cast<int*>(c);
 
 C'de derlenmiş kütüphaneleri C++'da kullanabilmek için belirtilir.
 
-Aşağıdaki şekilde ön tanımlı sembolik sabit(`predefining symboling constant`) makrosı ile sarmalanır.
-
 ```C++
 extern "C" void f1();
 extern "C" void f2();
@@ -510,6 +508,7 @@ void f1();
 void f2();
 } 
 ```
+Aşağıdaki şekilde ön tanımlı sembolik sabit(`predefining symboling constant`) makrosı ile sarmalanır.
 
 ```C++
 #ifdef _cplusplus
@@ -580,7 +579,7 @@ void func(const T*); // getter, accessor
 class Myclass {
 public:
     void func();      // func(Myclass*)
-    void foo()const;  // foo(const Myclass*)
+    void foo()const;  // foo(const Myclass*) const member func.
 }
 ```
 
@@ -690,7 +689,7 @@ Hangi fonksiyonlar inline olarak tanımlanır?
 1. Sınıfın static üye işlevleri
 1. Sınıfın friendlik verdiği işlevler
 
-#### Sınıfların özel üye fonksiyonları(Spercial member functions)
+#### Sınıfların özel üye fonksiyonları(Special member functions)
 - default constructor
 - deconstructor
 - copy constructor
@@ -706,5 +705,341 @@ Statik ömürlü global nesneler için constructor main'den önce çağrılır.
 - static initialization fiasce
 - static initialization problem
 
+#### Deconstructor(Yıkıcı fonksiyon)
+
+Bir sınıfın sadece bir tane deconstructor'u vardır ve hiçbir parametre almaz.
+
+```C++
+class Myclass {
+    ~Myclass();
+}
+```
+
+Bir fonksiyonun sonuna `delete` anahtar kelimesi eklenerek delete edilebilir.
+
+`void func() = delete;`
+
+En önemlisi delete edilen fonksiyonlar, function overloading resolution sürecine katılır.
+
+```C++
+void func();
+void func(int);
+void func(double) = delete;
+
+func();    // Geçerli
+func(12);  // Geçerli
+func(2.4); // Geçersiz function deleted.
+```
+
+#### Constructor initialization list
+
+```C++
+class Myclass {
+public:
+    Myclass() : u(expr), t(expr)
+    {
+    }
+private:
+    T t;
+    U u;
+}
+```
+
+Class içerisindeki üye elemanlarının sırası ile kurucu ilklendirme listesi(constructor initialization list) aynı sırada olması iyi bir alışkanlıktır. Fakat yukarıdaki sınıfda sıraya uyulmuş olunmasada derleyici ilk olarak t'yi daha sonra u'yi ilklendirir.
 
 
+#### Default member initializer
+
+Class içerisinde parantez`()` atomu ile üye elemanları ilklendirme(`default initialize`) yapılamaz.
+
+```C++
+class Myclass {
+    int mx(3);      // Geçersiz
+    // T t = expr;  // Geçerli
+    // T t{ expr }; // Geçerli
+    // T t(expr);   // Geçersiz
+}
+```
+
+Eğer programlayıcı sınıf için hiç bir constructor yazmaz ise derleyici sınıfın default constructor'ını default eder.
+
+Derleyicinin yazdığı(default ettiği) default constructor
+
+1. Sınıfın non-static public inline fonksiyonudur.
+1. Bu fonksiyon sınıfın tüm veri elemanları default initialize eder.
+1. Ancak eğer bir veri elamanı için default member initialize kullanılmış ise bu durumda derleyici bu init'ı kullanır.
+
+![](images/defaultspecialmember.png)
+
+__Implicitly declared__
+```C++
+class Myclass {
+
+};
+```
+
+__User declared__
+```C++
+class Myclass {
+public:
+    Myclass();
+    Myclass() = default;
+    Myclass() = delete;
+};
+```
+__Not declared__
+```C++
+class Myclass {
+public:
+    Myclass(int);
+};
+```
+
+Eğer derleyici durumdan vazife çıkartarak sınıfın özel bir üye fonksiyonunu default ederse (yani bu özel üye fonk. implicitly declared ise) eğer bu fonksiyonun derleyici tarafından yazımında bir sentaks hatası oluşursa derleyici bu fonksiyonu delete eder.
+
+```C++
+class Myclass {
+public:
+
+private:
+    const int mx;
+};
+
+Myclass m; // Hata ctor deleted 
+```
+
+```C++
+class Myclass {
+public:
+
+private:
+    int& r;
+};
+
+Myclass m; // Hata ctor deleted
+```
+
+Sentaks hatası const bir değişken ve referanslar ilk değer başlatılmak zorunda.
+
+
+#### Copy constructor
+
+Bir sınıf nesnesi hayata değerini aynı türden bir sınıf nesnesinden alarak geldiğinde, derleyicinin Myclass sınıfı için yazdığı copy ctor
+
+1. sınıfın non-static public inline fonksiyonudur.
+
+1. parametrik yapısı `Myclass(const Myclass&);`
+
+```C++
+class Myclass {
+public:
+    Myclass(const Myclass& other) : tx(other.tx), ux(other.ux)
+    {
+    }
+private:
+    T tx;
+    U ux;
+} 
+```
+
+Hangi durumlarda copy constructor yazmak gerekir?
+
+İdeali derleyicinin bu fonksiyonları kendisinin yazması, buna rule of zero denmektedir.
+
+- Dinamik bir veri elemanı olması durumunda
+- Pointer veri elamanı olması durumunda
+
+Kopyalamayı derleyici yapıyorsa shallow copy(sığ kopyalama) yapar. Bu durumda dinamik veri elmanı veya pointer üye elemanımız varsa bu kopyalamayla aynı bellek alanını başka bir nesne ile paylaşmış olacağız böylece bir nesnenin ömrünün sona ermesiyle diğer kopyasını alan nesnenin sona ermesi durumunda free edilen bellek adresi tekrar free edilmeye çalışıldığından run time çalışma hatası olacaktır.
+
+- Bir nesnenin kendine atanmasına self assigment denilir. Bu durumda tanımsız davranış oluşur.
+
+- Copy Ctr'yi siz yazacaksınız sınıfın tüm öğelerinden siz sorumlusunuz. Sadece pointer için yazıp, diğer primitif türler için yazmazsak o öğeler çöp değerler ile başlar.
+
+```cpp
+class A {
+public:
+private:
+	T *mp; 
+	U x, y, z; // Bu öğeler içinde copy ctr içerisinde atama yapman gerekiyor.
+```
+
+
+```Cpp
+class Name
+{
+private:
+	char *mp;
+	size_t mlen;
+public:
+	Name(const char *p) : mlen{std::strlen(p) }
+	{
+			mp = static_cast<char*>(std::malloc(mlen + 1));
+			if (!mp) {
+				std::cerr << "bellek yetersiz !\n";
+				std::exit(EXIT_FAILURE);
+			}
+			std::strcpy(mp, p);
+	}
+
+	Name(const Name &other) : mlen(other.mlen)
+	{
+			mp = static_cast<char*>(std::malloc(mlen + 1));
+			if (!mp) {
+				std::cerr << "bellek yetersiz !\n";
+				std::exit(EXIT_FAILURE);
+			}
+			std::strcpy(mp, p);
+	}
+
+	Name &operator=(const Name &r)
+	{
+		if (this == &r)  // self assignment kontrol ediliyor
+				return *this;
+
+		mlen = r.mlen;
+		free(mp);
+		
+		mp = static_cast<char*>(std::malloc(mlen + 1));
+		if (!mp) {
+				std::cerr << "bellek yetersiz !\n";
+				std::exit(EXIT_FAILURE);
+		}
+		std::strcpy(mp, p);
+	}
+
+	void print()const
+	{
+		std::cout << "(" << mp << ")\n";
+	}
+
+	size_t length() const
+	{
+		return mlen;
+	}
+
+	~Name()
+	{	
+		free(mp);		
+	}
+};
+```
+
+#### Move Constructor
+
+Hayatı bitecek bir nesne ile başka bir nesneyi hayata getirecek isek, kaynakları kopyalamak yerine hayatı bitecek o nesnenin kaynaklarını alabiliriz. Modern C++ ile dile eklenen bu sağ taraf referanslarının gücü ile bunu yapabiliriz. Sınıfımıza move semantiğini ekleyeceğiz. Tipik move ctr'si önce gidip diğer nesnenin kaynağını çalıyor, sonra fonksiyona gelen nesneyi destruct edilebilir ama kaynağı olmayan durumda bırakıyor. Eğer bunu derleyicinin yazımına bırakırsak şöyle olmak zorunda.
+
+```cpp
+class Myclass {
+	T x;
+	U y;
+public:
+	Myclass(Myclass &&r) : x(move(r.x)), y(move(r.y))
+	{
+		
+	}
+//move fonksiyonu, sol taraf değeri türünün sağ taraf değerine dönüştürür.
+};
+
+```
+```cpp
+class Name
+{
+private:
+	char *mp;
+	size_t mlen;
+public:
+	Name(const char *p) : mlen{std::strlen(p) }
+	{
+			mp = static_cast<char*>(std::malloc(mlen + 1));
+			if (!mp) {
+				std::cerr << "bellek yetersiz !\n";
+				std::exit(EXIT_FAILURE);
+			}
+			std::strcpy(mp, p);
+	}
+
+	Name(const Name &other) : mlen(other.mlen)
+	{
+			mp = static_cast<char*>(std::malloc(mlen + 1));
+			if (!mp) {
+				std::cerr << "bellek yetersiz !\n";
+				std::exit(EXIT_FAILURE);
+			}
+			std::strcpy(mp, p);
+	}
+
+	Name(Name &&r) : mlen{r.mlen}, mp {r.mp} //
+	{
+		r.mp = nullptr;
+	}
+
+	Name &operator=(Name &&r)
+	{
+			if (this == &r) //self-assignment kontrolü
+			{
+				return *this;				
+			}
+			free(mp);
+			mp = r.mp;
+			mlen = r.mlen;
+			r.mp = nullptr;
+			return *this;
+	}
+
+	Name &operator=(const Name &r)
+	{
+		if (this == &r)
+				return *this;
+
+		mlen = r.mlen;
+		free(mp);
+		
+		mp = static_cast<char*>(std::malloc(mlen + 1));
+		if (!mp) {
+				std::cerr << "bellek yetersiz !\n";
+				std::exit(EXIT_FAILURE);
+		}
+		std::strcpy(mp, p);
+	}
+
+	void print()const
+	{
+		std::cout << "(" << mp << ")\n";
+	}
+
+	size_t length() const
+	{
+		return mlen;
+	}
+	~Name()
+	{
+        // free edilen kaynağı tekrar free etme!
+		if(mp)
+		{
+			free(mp);
+		}
+	}
+};
+```
+
+#### Temporary Object (Geçici Nesne)
+
+Geçici nesne oluşturma ifadeleri __sağ taraf değeri__ ifadesidir.
+
+```cpp
+void func(Name x)
+{
+	
+}
+
+func(Name{"Enes"}); // Name(const char *p) ctor çağrılır
+Name x{"Enes"};     // Name(const char *p) ctor çağrılır
+func(std::move(x)); // move ctor çağrılır.
+```
+
+`move == static_cast<T &&>(y)` gibi bir dönüşüm gerçekleşiyor diyebiliriz.
+
+<!--
+-->
+
+![](images/specialmembers.svg)
