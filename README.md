@@ -31,7 +31,7 @@
 ## Reference
 
 ```txt
-              expersion
+              expression
                /     \ 
               /       \
              /         \
@@ -111,12 +111,12 @@ const int& z{dval}; //invalid. Narrowing conservion
 - `int x{};`   &#8594; value, uniform, bracet initialization
 - `int x{10};` &#8594; direct list initialization
 
-**Uniform initialization neden ekledi?**
+**Uniform initialization neden eklendi?**
 1. Neye ilk değer verirsen ver her zaman kullanılabilir.
 1. Narrowing conversion durumunu engellemek için.
 1. Most vexing parse(Scott Meyers tarafından dile ekledi)
 
-__Most vexig parse__
+__Most vexing parse__
 ```C++
 #include <iostream>
 
@@ -268,7 +268,7 @@ void func(int a, int b);
 void func(int);
 ```
 
-1. **Variadic convertion**
+1. **Variadic conversion**
 
 __İstisna:__ C'de variadic fonksiyonlar sadece *elipsis(...)* kullanılarak tanımlanamaz. C++ bu gerçerlidir.
 
@@ -284,7 +284,7 @@ int main()
 }
 ```
 
-2. **User-defined Convertion**
+2. **User-defined Conversion**
 
     Programlayıcı tarafından tanımlanan dönüşümlere denir.
     ```C++
@@ -450,7 +450,7 @@ int* ptr = (int*)&x;
 ````
 
 #### static_cast
--  int*'dan void*'a implicit type convertion vardır.
+-  int*'dan void*'a implicit type conversion vardır.
 
 - int*'dan void*'a veya void*'dan int*'a hem static_cast hem de reinterpret_cast kullanılabilir.
 
@@ -651,10 +651,10 @@ Farklı kaynak dosyalarında tanımlandıkları halde token-by-token aynı olduk
 Nitekim başlık dosyalarında oluşturduğumuz class tanımını a.hpp yi a.cpp de include ettiğimiz takdirde bu geçerli olmasaydı ill-formed olurdu.
 
 __ODR'a  uyanlar;__
-- class definations
-- inline functions definations
-- inline variable definations
-- class template definations
+- class definitions
+- inline functions definitions
+- inline variable definitions
+- class template definitions
 - ...
 
 #### inline fonksiyonlar
@@ -690,19 +690,18 @@ Hangi fonksiyonlar inline olarak tanımlanır?
 1. Sınıfın friendlik verdiği işlevler
 
 #### Sınıfların özel üye fonksiyonları(Special member functions)
-- default constructor
-- deconstructor
-- copy constructor
-- move constructor (C++11)
-- copy assignment
-- move assignment (C++11)
-
+- default constructor       X();
+- deconstructor             ~X();
+- copy constructor          X(X const&);
+- move constructor(C++11)   X(X&&);
+- copy assignment           X& operator=(X const&);
+- move assignment(C++11)    X& operator=(X&&)
 
 #### Constructor(Kurucu fonksiyon)
 
 Statik ömürlü global nesneler için constructor main'den önce çağrılır.
 
-- static initialization fiasce
+- static initialization fiasco
 - static initialization problem
 
 #### Deconstructor(Yıkıcı fonksiyon)
@@ -808,7 +807,7 @@ private:
 Myclass m; // Hata ctor deleted 
 ```
 
-```C++
+```CPP
 class Myclass {
 public:
 
@@ -830,7 +829,7 @@ Bir sınıf nesnesi hayata değerini aynı türden bir sınıf nesnesinden alara
 
 1. parametrik yapısı `Myclass(const Myclass&);`
 
-```C++
+```CPP
 class Myclass {
 public:
     Myclass(const Myclass& other) : tx(other.tx), ux(other.ux)
@@ -839,7 +838,7 @@ public:
 private:
     T tx;
     U ux;
-} 
+};
 ```
 
 Hangi durumlarda copy constructor yazmak gerekir?
@@ -855,12 +854,13 @@ Kopyalamayı derleyici yapıyorsa shallow copy(sığ kopyalama) yapar. Bu durumd
 
 - Copy Ctr'yi siz yazacaksınız sınıfın tüm öğelerinden siz sorumlusunuz. Sadece pointer için yazıp, diğer primitif türler için yazmazsak o öğeler çöp değerler ile başlar.
 
-```cpp
+```CPP
 class A {
 public:
 private:
 	T *mp; 
 	U x, y, z; // Bu öğeler içinde copy ctr içerisinde atama yapman gerekiyor.
+};
 ```
 
 
@@ -928,7 +928,7 @@ public:
 
 Hayatı bitecek bir nesne ile başka bir nesneyi hayata getirecek isek, kaynakları kopyalamak yerine hayatı bitecek o nesnenin kaynaklarını alabiliriz. Modern C++ ile dile eklenen bu sağ taraf referanslarının gücü ile bunu yapabiliriz. Sınıfımıza move semantiğini ekleyeceğiz. Tipik move ctr'si önce gidip diğer nesnenin kaynağını çalıyor, sonra fonksiyona gelen nesneyi destruct edilebilir ama kaynağı olmayan durumda bırakıyor. Eğer bunu derleyicinin yazımına bırakırsak şöyle olmak zorunda.
 
-```cpp
+```CPP
 class Myclass {
 	T x;
 	U y;
@@ -941,13 +941,14 @@ public:
 };
 
 ```
-```cpp
+```CPP
 class Name
 {
 private:
 	char *mp;
 	size_t mlen;
 public:
+    Name() : mlen(0), mp(nullptr) {}
 	Name(const char *p) : mlen{std::strlen(p) }
 	{
 			mp = static_cast<char*>(std::malloc(mlen + 1));
@@ -1026,20 +1027,267 @@ public:
 
 Geçici nesne oluşturma ifadeleri __sağ taraf değeri__ ifadesidir.
 
-```cpp
-void func(Name x)
-{
-	
-}
+```CPP
+Name name;
+name = "Enes Alp";
+// Derleyici sırasıyla aşağıdaki kodu üretir.
+// 1. Name temp("Enes Alp");
+// 2. name = temp;
+// temp bir temporary object yani rvalue olduğu için move assignment çağrılacaktır.
 
-func(Name{"Enes"}); // Name(const char *p) ctor çağrılır
-Name x{"Enes"};     // Name(const char *p) ctor çağrılır
-func(std::move(x)); // move ctor çağrılır.
 ```
 
+**std::move:**
+
+Bir lvalue ifadesini rvalue ifadesine, rvalue ifadesini ise yine rvalue ifadesine çeviren yardımcı bir fonksiyondur.
+
 `move == static_cast<T &&>(y)` gibi bir dönüşüm gerçekleşiyor diyebiliriz.
+
+Ne zaman kullanılmalı?
+
+Bir nesne bir daha kullanılmayacaksa o zaman taşıma işlemi yapılmalıdır.
+
+Örneğin;
+
+```CPP
+swap(T& a, T& b) {
+    T tmp(a);   // Şuan a'nın iki kopyasına sahipiz
+    a = b;      // Şuan b'nın iki kopyasına sahipiz(+ a'nın bir kopyasını attık)
+    b = tmp;    // Şuan tmp'in iki tane kopyasına sahipiz. (+ b'nin bir kopyasını attık)
+}
+```
+
+bu kod yerine aşağıdaki kodu tercih etmelisiniz.
+
+```CPP
+swap(T& a, T& b) {
+    T tmp(std::move(a));
+    a = std::move(b);   
+    b = std::move(tmp);
+}
+```
 
 <!--
 -->
 
+Aşağıdaki görselde bir sınıfın hangi durumlarda tanımlanırsa derleyici hangi özel üye fonksiyonlarını yazacak, silecek veya tanımlamıyacak bunlar gösterilmiştir.
+
 ![](images/specialmembers.svg)
+
+
+#### Friend bildirimi
+1. Global bir fonksiyona friend'lik vermek.
+2. Bir sınıfın bir üye fonksiyonuna friend'lik vermek.
+3. Bir sınıfın tamamına friend'lik vermek.
+
+Yukarıdaki gibi 3 farklı şekilde bir sınıfa friend'lik verilebilir.
+
+```CPP
+class Myclass {
+private:
+    int mx;
+    void func());
+};
+
+void gf() {
+    Myclass my;
+    my.func();  // geçersiz
+    my.mx = 13; // geçersiz
+}
+```
+Görüldüğü üzere fonksiyon sınıfın özel üye elemanlarına ve işlevlerine erişmesi durumunda sentaks hatası alınacaktır. Fakat bunu sentaks hatası almadan yani access kontrolüne takılmadan erişebilmenin yolu fonksiyona friendlik vererek yapılır.
+
+```CPP
+class Myclass {
+private:
+    int mx;
+    void func();
+    friend void gf();
+}
+
+void gf() {
+    Myclass my;
+    my.func();  // geçerli
+    my.mx = 13; // geçerli
+}
+```
+`void gf()`fonksiyonuna friendlik vererek sınıfın private kısmına erişmesini sağladık.
+
+**Not:** Friend bildirimi için access kontrol önemli değildir. İstenilen access modifier içerisinde bildirilebilir.
+
+
+## Operator Overloading
+
+- `[ ]` &#8594; index operatörü
+
+- `*` ve `->` operatörü
+
+- Fonksiyon çağrı operatörü
+
+- Tür dönüştürme operatörü
+
+- Enum türleri için operatör fonksiyon yazımı 
+
+Aşağıdaki operatörler **overload edilemez.**
+
+- Nokta`.` operatörü
+
+- sizeof operatörü
+
+- ternary`?:` operatörü 
+
+- çözünürlük`::` operatörü
+
+- .* operatörü
+
+- typeid operatörü
+
+Bazı operatörler **global olamaz.**
+
+- Köşeli parantez`[]` operatörü
+
+- Ok`->` operatörü
+
+- Tür dönüştürme`()` operatörü
+
+Aşağıdaki operatörler **sol taraf değeri** döndürür.
+
+- Assignment`=`
+
+- Subscript`[]`
+
+- Class member access`->`
+
+- Pointer to member selection`->*`
+
+- Dereference`*`
+
+- new/delete
+
+- Smaller than`<=`
+
+- Greater than`>=`
+
+- Prefix Increment`++`
+
+- Prefix Decrement`--`
+
+Operatörler hem sınıf içerisinde hemde global olarak tanımlanabilir. Bazı operatörlerde unary, binary veya ternary olabilir.
+
+__Unary Operator__
+
+Global olarak;
+
+~x &#8594; operator~(x)
+
+Sınıf içerisinde;
+
+~x &#8594; operator~()
+
+__Binary Operator__
+
+Global olarak;
+
+x~y &#8594; operator~(x,y)
+
+Sınıf içerisinde;
+
+x~y &#8594; x.operator~(y)
+
+> Sınıfın nesnesini değiştiren operatörler üye operatörlere simetrik iki operand olan operatörler ise global yazılması tavsiye ediler.
+
+> Operatörlerin dildeki belirlenmiş öncelik seviyesi ve öncelik yönünü associativity değiştirilemez.
+
+#### [ ] opeatorü (index operatörü)
+
+- T& opeartor[](size_t idx);
+- const T& operator[](size_t idx)const;
+
+Const doğruluğunu korumak amacıyla operatörün const overloading fonksiyonu yazılır. Böylece 
+
+```CPP
+class Myarray {
+public:
+    Myarray(int size) : msize(size), mp(new int[size]) {
+        memset(mp,0,msize * sizeof(int));
+    }
+    int& operator[](size_t idx) {
+        return mp[idx];
+    }
+    const int& operator[](size_t idx)const {
+        return mp[idx];
+    }
+private:
+    size_t msize;
+    int* mp;
+}
+```
+
+#### * operatörü
+
+Unary bir operatordür. Global olarak tanımlanamazlar. Sadece sınıf içerisinde tanımlanabilir.
+
+Counter sınıfı üzerinden devam edecek olursak.
+
+```CPP
+int& operator*()const {
+    return mp;
+}
+```
+
+#### -> operatorü
+Unary bir operatördür. Geri dönüş değeri sınıf nesnesinin adresini döndürür.
+```CPP
+class Counter {
+public:
+    Counter(int count) : mcount(count) {}
+    ~Counter() {
+        std::cout << "Counter() destructor\n";
+    }
+    int get_value()const { return mcount; }
+    friend std::ostream& operator<<(std::ostream& out, const Counter& c)
+    {
+        return out << c.mcount;
+    }
+private:
+    int mcount;
+};
+class CounterPtr {
+public:
+    CounterPtr(Counter* c) : mc(c) {}
+    ~CounterPtr() {
+        if(mc)
+            delete mc;
+    }
+    Counter* operator->()const {
+        return mc;
+    }
+    Counter& operator*() const {
+        return *mc;
+    }
+private:
+    Counter* mc;
+};
+
+```
+
+#### Boolean context
+Logic operatörlerin operandları
+
+- if parantezindeki ifade
+- while parantezindeki ifade
+- do while parantezindeki ifade
+- for döngü deyiminin iki noktalı virgül arasındaki ifade
+
+
+
+
+
+
+
+
+
+
+
+
+
