@@ -1074,8 +1074,98 @@ Aşağıdaki görselde bir sınıfın hangi durumlarda tanımlanırsa derleyici 
 
 ![](images/specialmembers.svg)
 
+#### Explicit Constructor
+Otomatik dönüşümün sentaks hatası vermesi için kullanılır. Ancak tür dönüşüm operatorleri ile kullanılabilir.
 
-#### Friend bildirimi
+```CPP
+class Mint {
+public:
+    explicit Mint(int x){ 
+        std::cout << "Mint(int x) x = " << x << "\n";
+    }
+};
+
+Mint x(13);  // 1.   Geçerli
+Mint y = 13; // 2.   Geçersiz
+```
+Yukarıdaki durumda derleyici otomatik dönüşüm yapmayacağından yani int türünden Mint sınıf türüne otomatik dönüşüm yapmayacağından 2. ifade geçersiz olur.
+
+Genellikle tek parametreliconstructorlar explicit olarak tanımlanır. Bunun en önemli nedeni otomatik dönüşümlerin bulunması zor olan, can sıkıntılı sorunları engelemek içindir.
+
+Bir önceki `Mint` sınıfını expilicit olmadan yeniden tanımlarsak
+
+```CPP
+class Mint {
+public:
+    Mint(int x){ 
+        std::cout << "Mint(int x) x = " << x << "\n";
+    }
+};
+
+Mint x = 13;     //Geçerli
+Mint y(13);      //Geçerli
+Mint z{13};      //Geçerli
+Mint f = 13.3;   //Geçerli
+Mint g = 13.3f;  //Geçerli
+```
+
+Görüldüğü gibi explicit olmadan tanımladığımız tüm ifadeler geçerli durumdadır. Böylelikle yanlış bir ifade girilmesi durumunda logic olarak sentaks hatası beklenilen durumda herhangibir sentaks hatası yoktur ve logic hatanın bulunmasıda oldukça can sıkıntılı olacaktır.
+
+Derleyici iki şekilde dönüşüm gerçekleştirir.
+
+- UDC(User Defined Conversion)
+
+- SC(Standart Conversion)
+
+    - UDC + SC
+    - SC  + UDC
+
+Yani derleyici öncelikle SC daha sonra UDC veya tam tersi UDC sonra SC şeklinde kodu üretebilir.
+    
+    Mint x = 13.5; // ilk olarak SC daha sonra USC
+    //Derleyici Mint x = static_cast<int>(13.5); gibi bir kod üretir.
+
+#### Temporary Object
+Öyle ifadeler ki kod içinde isimlendirilmiş bir nesne olmasa da çalışan kodda bir nesnenin varlığı söz konusudur.
+
+Geçici nesnelerin değer kategorisi prvalue expression'dır.
+
+```Cpp
+Mint(13); //Mint türünden geçici nesne
+```
+
+```Cpp
+class Myclass {
+public:
+    Myclass() { std::cout << "default ctor\n"; }
+    Myclass(int) { std::cout << "Mclass(int)\n"; }
+    ~Myclass() { std::cout << "destructor\n"; }
+};
+
+int main()
+{
+    Myclass mx;
+    mx = Myclass{13};
+    (void)getchar();
+}
+
+// default ctor
+// Mclass(int)
+// destructor
+
+// destructor
+```
+Program getchar fonksiyonuna geldiği zaman destructor çağrıldı. Bu bize `Myclass{13}` şeklinde oluşturduğumuz geçici nesnenin derleyici tarafından üretilip daha sonra sonlandığını göstermektedir.
+
+Geçici nesnelerinin hayatlarını uzatabiliriz. Buna life extension denilmektedir.
+```Cpp
+const Myclass& r = Myclass{13};
+Myclass&& rx = Myclass{13};
+```
+Yukarıdaki kodda geçici olarak oluşturduğumuz kodu const sol taraf referansı değerine veya sağ taraf referansı değerine bağlayarak life extension yapmış olduk.
+
+
+#### Friend Decleration
 1. Global bir fonksiyona friend'lik vermek.
 2. Bir sınıfın bir üye fonksiyonuna friend'lik vermek.
 3. Bir sınıfın tamamına friend'lik vermek.
@@ -1178,21 +1268,21 @@ __Unary Operator__
 
 Global olarak;
 
-~x &#8594; operator~(x)
+!x &#8594; operator!(x)
 
 Sınıf içerisinde;
 
-~x &#8594; operator~()
+!x &#8594; operator!()
 
 __Binary Operator__
 
 Global olarak;
 
-x~y &#8594; operator~(x,y)
+x<y &#8594; operator<(x,y)
 
 Sınıf içerisinde;
 
-x~y &#8594; x.operator~(y)
+x<y &#8594; x.operator<(y)
 
 > Sınıfın nesnesini değiştiren operatörler üye operatörlere simetrik iki operand olan operatörler ise global yazılması tavsiye ediler.
 
@@ -1271,6 +1361,40 @@ private:
 
 ```
 
+#### Copy elision
+Derleyicin kullandığı bir optimizasyon tekniğidir.
+
+C++17 stadartları ile bazı durumlarda `mandatory copy elision`uygulanır.
+
+Eğer bir fonksiyonun parametresi bir sınıf türündense ve bu fonksiyon bir sağ taraf değeri sınıf nesnesi ile çağrılırsa copy elision uygulanır.
+
+```CPP
+//RVO
+Myclass func() {
+    cout << "func cagrildi\n";
+    return Myclass{};
+}
+int main() {
+    Myclass x = func(); // mandatory copy elision uygulanır
+}
+```
+
+```CPP
+//NRVO(Named Return Value Optimization)
+//mandory değil debug modda çalışırsa optimizasyon uygulanmaz
+Myclass func() {
+    cout << "func cagrildi\n";
+    Myclass m;
+    cout << "func calismasina devam ediyor\n";
+    return m;
+}
+int main() {
+    Myclass mx = func();
+    // Release modda sadece ctor çağrılır.
+    // Fakat normalde func'ın içerisinde ctor geri dönüş değerinde ise move ctor çağrılması gerekirdi.
+}
+```
+
 #### Boolean context
 Logic operatörlerin operandları
 
@@ -1279,12 +1403,39 @@ Logic operatörlerin operandları
 - do while parantezindeki ifade
 - for döngü deyiminin iki noktalı virgül arasındaki ifade
 
+#### Complete / Incomplete Type
+Eğer derleyici bir kaynak kod dosyasında o sınıfın tanımını görüyorsa complete type, sadece bildirimini görüyorsa incomplete type'dır.
 
+- Sınıfın veri elemanı incomplete type olamaz.
+- Bir sınıfın kendi elemanından veri elemanı olamaz fakat statik veri elemanları kendi türünden olabilir.
+- Sınıfın statik veri elemanları incomplete type olabilir.
 
+#### Incomplete Type
+- İşlev bildirimlerinde parametre veya geri dönüş değeri olarak kullanılabilir.
+    - `A func(B,C*);`
 
+- Typedef veya using bildirimlerinde
+    - `typedef Myclass mcs;`
+    - `typedef Myclass* mcsp;`
 
+- Sınıfların static veri elemanları
+    - `class A { static A a; }`
 
+- Pointer değişkenler
+    - `class B; class A { B* b; static A* a;}`
+    - `class A; A* a;`
 
+- sizeof operatörünün operantı olamaz
+
+#### Complete Type
+- Instantiation yapılacaksa yani bir nesne oluşturulacaksa
+    - `class A; A a;`**//Geçersiz**
+    - `class A{ }; A a;`
+
+- sizeof operatörünün operandı
+    - `class A{ }; sizeof(A)`
+
+Incomplete type olarak tanımlama yapmanın en önemli nedeni başlık dosyalarıdır. Bir başlık dosyasının baka bir başlık dosyasını dahil etmesi durumunda birden fazla başlık dosyası eklenmiş olabilir. Biz istemediğimiz başlık dosyalarınıda include etmiş olabiliriz. Bu bizim compile time süremizi uzatmakla birlikte, asıl önemli olan bağımlılık oluşturmasıdır. Bağımlılığı azaltmak için incomplete type olarak tanımlanması gerekir.
 
 
 
