@@ -1208,7 +1208,7 @@ void gf() {
 
 ## Operator Overloading
 
-- `[ ]` &#8594; index operatörü
+- index`[ ]` operatörü
 
 - `*` ve `->` operatörü
 
@@ -1266,29 +1266,29 @@ Operatörler hem sınıf içerisinde hemde global olarak tanımlanabilir. Bazı 
 
 __Unary Operator__
 
-Global olarak;
-
-!x &#8594; operator!(x)
-
-Sınıf içerisinde;
-
-!x &#8594; operator!()
-
+Global olarak
+```Cpp
+~x ---> operator~(x)
+```
+Sınıf içerisinde
+```Cpp
+~x ---> operator~()
+```
 __Binary Operator__
 
-Global olarak;
-
-x<y &#8594; operator<(x,y)
-
+Global olarak
+```Cpp
+x<y ---> operator<(x,y)
+```
 Sınıf içerisinde;
-
-x<y &#8594; x.operator<(y)
-
+```Cpp
+x<y ---> x.operator<(y)
+```
 > Sınıfın nesnesini değiştiren operatörler üye operatörlere simetrik iki operand olan operatörler ise global yazılması tavsiye ediler.
 
 > Operatörlerin dildeki belirlenmiş öncelik seviyesi ve öncelik yönünü associativity değiştirilemez.
 
-#### [ ] opeatorü (index operatörü)
+#### Index([ ]) opeatorü
 
 - T& opeartor[](size_t idx);
 - const T& operator[](size_t idx)const;
@@ -1325,7 +1325,7 @@ int& operator*()const {
 }
 ```
 
-#### -> operatorü
+#### Ok(->) operatorü
 Unary bir operatördür. Geri dönüş değeri sınıf nesnesinin adresini döndürür.
 ```CPP
 class Counter {
@@ -1362,11 +1362,11 @@ private:
 ```
 
 #### Copy elision
-Derleyicin kullandığı bir optimizasyon tekniğidir.
+- Derleyicin kullandığı bir optimizasyon tekniğidir.
 
-C++17 stadartları ile bazı durumlarda `mandatory copy elision`uygulanır.
+- C++17 stadartları ile bazı durumlarda `mandatory copy elision` uygulanır.
 
-Eğer bir fonksiyonun parametresi bir sınıf türündense ve bu fonksiyon bir sağ taraf değeri sınıf nesnesi ile çağrılırsa copy elision uygulanır.
+- Eğer bir fonksiyonun parametresi bir sınıf türündense ve bu fonksiyon bir sağ taraf değeri sınıf nesnesi ile çağrılırsa copy elision uygulanır.
 
 ```CPP
 //RVO
@@ -1436,6 +1436,135 @@ Eğer derleyici bir kaynak kod dosyasında o sınıfın tanımını görüyorsa 
     - `class A{ }; sizeof(A)`
 
 Incomplete type olarak tanımlama yapmanın en önemli nedeni başlık dosyalarıdır. Bir başlık dosyasının baka bir başlık dosyasını dahil etmesi durumunda birden fazla başlık dosyası eklenmiş olabilir. Biz istemediğimiz başlık dosyalarınıda include etmiş olabiliriz. Bu bizim compile time süremizi uzatmakla birlikte, asıl önemli olan bağımlılık oluşturmasıdır. Bağımlılığı azaltmak için incomplete type olarak tanımlanması gerekir.
+
+#### Sınıfın Statik Veri Elemanları Ve Üye Fonksiyonları
+
+- Sınıfın statik veri elemanları oluşturulacak tüm sınıf instance'ları için kullanılır.
+
+- Static const(integral type) ile sadece sınıfta ilklendirme yapılır. 
+
+```Cpp
+class Myclass {
+    static double x = 13.3;     //Sentaks hatası
+    static int y = 13;          //Sentaks hatası
+    static const int z = 13;    // Geçerli
+    static const float f = 13.f //Sentaks hatası
+};
+```
+
+- C++17 ile inline variable eklendi böylelikle sınıf içerisinde ilklendirme yapılabilir.
+
+```Cpp
+class Myclass {
+    inline static double x = 13.3;     //Geçerli
+    inline static int y = 13;          //Geçerli
+};
+```
+
+- Statik veri elemanları veya üye fonksiyonlarının tanımlarında `static` anahtar kelimesi olmayacaktır olursa sentaks hatası olur.
+
+
+```Cpp
+class Myclass {
+    static int x;
+    static void func(); // static member function "inline olarak tanımlanabilir."
+    void foo();  // non-static member function
+};
+static void Myclass::func(){}// Sentak hatası
+void Myclass::func(){}// Geçerli
+int Myclass::x = 13; // geçerli
+static int Myclass::x = 13 //Sentaks hatası
+```
+
+- Statik veri elemanları this pointer'i olmayan doğrudan bir sınıf nesnesi için çağrılmayan sınıf için çağrılan class scope erişim kontrolüne tabi sınıfın private üye değişkenlerine erişebiliyor.
+
+```Cpp
+class Myclass {
+public:
+    static void func();
+    void foo();
+private:
+    int mx;
+};
+
+void Myclass::func() {
+    mx = 13; //Sentaks hatası çünkü this pointer yok
+    foo();   //Sentaks hatası çünkü this pointer yok
+}
+
+void Myclass::func() {
+    Myclass m;
+    m.mx = 13; //Geçerli
+    m.foo();   //Geçerli
+}
+
+//Aşağıdaki ifadelerin tümü geçerlidir.
+int main() {
+    Myclass::func();
+    Myclass mx,my,mz;
+    Myclass* p{&mx};
+    auto pd{new Myclass};
+    Myclass& rm = my;
+    mx.func();
+    p->func();
+    rm.func();
+    mz.func();
+}
+```
+
+Eğer sınıf türünden sadece dinamik ömürlü nesne oluşturmak istersek statik üye fonksiyonu tanımlamız gerekir. Bunun statik olmasının nedeni doğrudan sınıf nesnesi oluşturmadan kullanmak ki zaten sınıfın kurucu üye fonksiyonu private kısmıma taşıayarak sadece bu statik üye değişkeni üzerinden nesneyi oluşturmak.
+```Cpp
+class Myclass {
+public:
+    static Myclass* createObject() {
+        return new Myclass;
+    }
+private:
+    Myclass();
+};
+
+Myclass m; //Sentaks hatası(Sınıfın constructor'ına erişim yok)
+Myclass* n = Myclass::createObject(); //Geçerli
+```
+
+#### if with initialization
+
+- C++17 ile dile eklendi.
+
+- Asıl kullanımı scope leakage(kapsam sızıntısı)'ın önüne geçmek içindir.
+
+```Cpp
+if(int val:func(); val > 10) {
+    //code 
+    ++val;
+    ////
+}
+```
+
+Normalde üsteki fonksiyonu C++17'den önce `int val = func(); if(val > 10){++val}`şeklinde tanımlayabileceğimizi biliyoruz fakat buradaki `val` değişkenini sadece if koşul ifadesi içerisinde kullanacaksak gereksiz yere isimin kapsamını büyütmüş olacağız ki bunada `scope leakage` denilmektedir.
+
+---
+
+> patern ile idiom arasındaki fark patern genel dillerdeki kullanılabilen kalıplarken, idiom dile özgüdür. Örneğin singleton, C++ singleton, C# singleton, Java singleton... gibi örnekler paterne örnektir. C++ RAII ise bir idiom'dur sadece C++ diline özgüdür genellik yoktur.
+
+#### Inline Variable
+
++ C++17 ile dile eklendi.
+
++ ODR'a uyum sağlamak amacıyla sıklıkla kullanılır.
+
++ Genel kullanımı header only dosyaları oluşturmak içinidir.
+
+```Cpp
+//a.h
+inline int ival = 13;
+class Myclass {
+    inline static int x = 13;
+    inline float f = 13.f;
+};
+```
+
+
 
 
 
