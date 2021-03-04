@@ -1564,10 +1564,209 @@ class Myclass {
 };
 ```
 
+#### Piml Idiom(Pointer Implementation)
+Sınıfın private bölümünü gizlemeye yönellik geliştirilmiş bir idiom'dur.
+Ancak asıl kullanımı private bölümünü gizlemenin yanında bağımlığı azaltmasıdır. Böylelikle başlık dosyalarını `.cpp` dosyasına ekleyeriz.
+
+Fakat bu idiomun dezavantajı heap alanında nesne oluşturmak zorunda olduğumuz için maliyeti arttırmış olacağız. Normal statik alanda 1 maliyetle işlem yapmamıza karşın heap'te oluşturduğumuz nesne ile 10 belki 20 maliyet işlem yapıyor olabiliriz.
 
 
+```Cpp
+//myclass.h
+class A;
+class B;
+class C;
+class Myclass {
+public:
+    Myclass(A a, B b, C c);
+    ~Myclass();
+    A get_A();
+    B get_B();
+    C get_C();
+private:
+    class Implementation;
+    Implementation* m_imp;
+};
+
+//myclass.cpp
+#include "A.h"
+#include "B.h"
+#include "C.h"
+
+class Myclass::Implementation {
+public:
+    Implementation(A& _a, B& _b, C& _c) : a(_a), b(_b), c(_c) 
+    {
+    }
+    A a;
+    B b;
+    C c;
+};
+
+Myclass::Myclass(A a, B b, C c) {
+    m_imp = new Implementation(a,b,c);
+}
+
+Myclass::~Myclass() {
+    if(m_imp) {
+        delete m_imp;
+        std::cout << "m_imp deleted\n";
+    }
+}
+
+A Myclass::get_A() {
+    return m_imp->a;
+}
+
+B Myclass::get_B() {
+    return m_imp->b;
+}
+
+C Myclass::get_C() {
+    return m_imp->c;
+}
+```
+
+#### Composition
+
+Compotion ile oluşturduğumuz nesneler arasında `Has-a` relationship vardır. Örneğin Human adında bir sınıfımız var ve içerisinde Heart adında bir sınıf nesnesi barındıryor olsun ne zamanki human nesnesi sonlandırılırsa o zaman Heart nesneside sonlanacaktır. Tipik gösterimi aşağıdaki gibidir.
+
+```Cpp
+#include "Heart"
+class Human {
+public:
+    Human() {
+        m_h = new Heart();
+    }
+    ~Human() {
+        if(m_h)
+            delete m_h;
+    }
+private:
+    Heart* m_h;
+};
+```
+
+Hiyerarşi aşağıdaki gibidir. 
+
+- association
+    - aggregation
+        - composition
+
+Her composition bir aggregation, her aggregation da bir association'dır. Fakat bunun tersi doğru değildir.
+
+#### Aggreagation
+
+Aggreagation ile oluşturduğumuz nesneler arasında da `Has-a` relationship vardır. Fakat compotion'dan farklı olarak nesnenin hayatı sonlandığında sahip olduğu nesnenin'de hayatını sonlandırmaz. Örneğin, Team adında bir sınıfımız olsun ve içerisinde Player adında bir üye sınıf nesnesi tutuyor olsun. Aralarında has-a relationship var `Team has a player`, fakat team ile oluşturduğumuz nesnenin hayatı sonlandığında player hala hayatta olacaktır. Tipik gösterimi aşağıdaki gibidir.
+
+```Cpp
+
+class Team {
+public:
+    Team(Player& player) : m_p(player) {}
+private:
+    Player m_p;
+};
+
+```
 
 
+#### Delegating Constructor
+
+Delegating constructor ile birden fazla oluşturulan constructorlar arasında __kod tekrarı yapmamak__ için kullanılır. Default member initializer ile kullanılır.
+
+Modern C++'tan önce delegating constructor yardımcı fonklsiyon kullanarak gerçekleştirilmeye çalışılırdı.
+
+```Cpp
+class Myclass {
+public:
+    Myclass() { init(); }
+    Myclass(int a) { init(a); }
+    Myclass(int a, int b) { init(a,b); }
+private:
+    int ma;
+    int mb;
+    void init(int a = 0, int b = 0) {
+        ma = a;
+        mb = b;
+    }
+};
+```
+
+Bu şekilde kod tekrarı yapmadık fakat üye değişkenleride ilk değer olarak başlatmış olmadık. Atama ile değişkenleri oluşturduk. İşte tam da bu noktada delegating contructor bu sorunu çözmemizi sağlıyor.
+
+```Cpp
+class Myclass {
+public:
+    Myclass() : Myclass(0,0) { }
+    Myclass(int a) : Myclass(a,0) { }
+    Myclass(int a , int b) : ma(a), mb(b) { }
+private:
+    int ma;
+    int mb;
+};
+```
+
+Gördüğünüz üzere kod tekrarına düşmemekle birlikte ilk değer ile üye değişkenlerini başlatmış olduk.
 
 
+#### Raw String Literal
 
+ Bir string literal C++'da bir ifade de kullanılacaksa sadece `const char*` olarak kullanılabilir. C'de ise bu `char[]` olarak tanımlanır. String sabitleri escape sequence'lar ile kullanılabilir.
+
+ | Escape Sequence  | Description    |
+ |       ---        |     ---        |
+ | \\'              | single quote   |
+ | \\"              | double quote	 |
+ | \\?              | question mark	 |
+ | \\\              | backslash      |
+ | \\a              | audible bell	 |
+ | \\b              | backspace      |
+ | \\f              | form feed      |
+ | \\n              | line feed      |
+ | \\r              | carriage return|
+ | \\t              | horizontal tab |
+ | \\v              | vertical tab   |
+
+ ```Cpp
+#include <iostream>
+
+
+int main() {
+    
+    const char* ch1 = "FooBar";
+    const char ch2[] = "Foo\
+Bar";
+    char ch3[] = "Foo" "Bar";
+
+    std::cout << ch1 << '\n';
+    std::cout << ch2 << '\n';
+    std::cout << ch3 << '\n';
+
+    const char* str1 = "\nHello\n World\n";
+    const char* str2 = R"foo(
+Hello
+ World
+)foo";
+    const char* str3 = "\n"
+                       "Hello\n"
+                       " World\n";
+    std::cout << str1 << str2 << str3;
+}
+// FooBar
+// FooBar
+// FooBar
+
+// Hello
+//  World
+
+// Hello
+//  World
+
+// Hello
+//  World
+ ```
+
+ ---
+ 
+ #### Namespaces
