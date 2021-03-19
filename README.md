@@ -18,16 +18,6 @@
     </style>
 -->
 
-## Value Category
-
-- RValue reference -> type category.
-
-- LValue reference -> type category
-
-- RValue -> value category
-
-- LValue -> value category
-
 ## Reference
 
 ```txt
@@ -41,6 +31,19 @@
         /     \      /     \
     lvalue     xvalue     prvalue
 ```
+
+#### Value Category
+
+- RValue
+
+- LValue
+
+#### Type Category
+
+- RValue reference
+
+- LValue reference
+
 **Rvalue:** Taşınabilir fakat bellekte herhangi bir adresi yok.
 
 __Lvalue:__ İsim formundaki yani bellekte yer tutan nesnelerin değer kategorisidir.
@@ -393,6 +396,8 @@ void func(const int);
 #### Enum:
 
 > C'den farklı olarak underlying type vardır.
+
+Enum'larda underlying(base) type sabit değildir. Böylece enumların temel tipi bir `implementation defined integral type`'dır.
 
 ```C++
 enum Color : char {
@@ -1447,7 +1452,7 @@ Incomplete type olarak tanımlama yapmanın en önemli nedeni başlık dosyalar�
 class Myclass {
     static double x = 13.3;     //Sentaks hatası
     static int y = 13;          //Sentaks hatası
-    static const int z = 13;    // Geçerli
+    static const int z = 13;    //Geçerli
     static const float f = 13.f //Sentaks hatası
 };
 ```
@@ -1512,7 +1517,8 @@ int main() {
 }
 ```
 
-Eğer sınıf türünden sadece dinamik ömürlü nesne oluşturmak istersek statik üye fonksiyonu tanımlamız gerekir. Bunun statik olmasının nedeni doğrudan sınıf nesnesi oluşturmadan kullanmak ki zaten sınıfın kurucu üye fonksiyonu private kısmıma taşıayarak sadece bu statik üye değişkeni üzerinden nesneyi oluşturmak.
+Eğer sınıf türünden sadece dinamik ömürlü nesne oluşturmak istersek statik üye fonksiyonu tanımlamamız gerekir. Bunun statik olmasının nedeni doğrudan sınıf nesnesi oluşturmadan kullanmak ki zaten sınıfın kurucu üye fonksiyonu private kısmıma taşıyarak sadece bu statik üye değişkeni üzerinden nesneyi oluşturmak.
+
 ```Cpp
 class Myclass {
 public:
@@ -1525,6 +1531,43 @@ private:
 
 Myclass m; //Sentaks hatası(Sınıfın constructor'ına erişim yok)
 Myclass* n = Myclass::createObject(); //Geçerli
+```
+
+Singleton(tek nesne örüntüsü) günümüzde pek tercih edilmemektedir hatta bazen anti-patern olarakta görebilmekteyiz bunu sebebi çok fazla kod singleton olarak yazılıp sonradan bu sınıfın singletondan çıkması durumunda yaşanan kod karmaşasıdır.
+
+```Cpp
+class Myclass {
+public:
+    static Myclass& get_instance() {
+        if(!smp) {
+            smp = new Myclass;
+        }
+        returm *smp;
+    }
+    void func();
+    void foo();
+    ///
+private:
+    Myclass();
+    inline static Myclass* smp{nullptr};
+};
+```
+
+Meyer's Singleton Class
+
+```Cpp
+class Myclass {
+public:
+    static Myclass& get_instance() {
+        static Myclass singleton;
+        return singleton;
+    }
+    void func();
+    void foo();
+    ///
+private:
+    Myclass();
+};
 ```
 
 #### if with initialization
@@ -1545,7 +1588,7 @@ Normalde üsteki fonksiyonu C++17'den önce `int val = func(); if(val > 10){++va
 
 ---
 
-> patern ile idiom arasındaki fark patern genel dillerdeki kullanılabilen kalıplarken, idiom dile özgüdür. Örneğin singleton, C++ singleton, C# singleton, Java singleton... gibi örnekler paterne örnektir. C++ RAII ise bir idiom'dur sadece C++ diline özgüdür genellik yoktur.
+> patern ile idiom arasındaki fark patern genel dillerdeki kullanılabilen kalıplarken, idiom dile özgüdür. Örneğin singleton, C++ singleton, C# singleton, Java singleton... gibi örnekler paterne örnektir. C++ RAII ise bir idiom'dur sadece C++ diline özgüdür, genellik yoktur.
 
 #### Inline Variable
 
@@ -1564,9 +1607,111 @@ class Myclass {
 };
 ```
 
+Bir sınıf içerisinde;
+
+1. Data Members
+
+    - static data members
+    
+    - non-static data members
+
+2. Member Function
+
+    - static member function
+
+    - non-static member function
+
+        - const member function
+
+        - non-const member function
+
+3. Member Types
+
+olacak şekilerde ifadeler tanımlanabilir.
+
+#### Nested Type
+
+```Cpp
+class Myclass {
+    class Nested {
+        //...
+    };
+    Nested func();
+    void foo(Nested);
+};
+```
+
+```Cpp
+class Encloser {
+    static void func();
+    int mx;
+    class Nested {
+        void foo() {
+            func(); //Geçerli
+            auto n = sizeof mx; //Geçerli
+        }
+    };
+};
+
+int main() {
+    Myclass mx;
+    Myclass::Nested retval = mx.foo(); //Geçersiz   1.
+    auto retval2 = mx.foo();           //Geçerli    2.
+}
+```
+1'in geçersiz 2'nin geçerli olması C++'ın kurallarından kaynaklanıyor. Auto ile belirsek hata değil fakat açık bir şekilde tanımlarsak hata olacakır.
+
+#### Pimple Idiom
+
+Pointer implementation'ın kısaltmasıdır.
+
+Sınıfın private bölümünü gizlemeye denir. Asıl önemli kullanımı başlık dosyasında üye elemanları için başlık dosyası dahil etmeyeceğimizden bağımlılığı azaltmış oluruz. Veri elemanları heap'te oluşacağı için bunun bir `maliyeti` vardır.
+
+```Cpp
+#include "A.h"
+#include "B.h"
+#include "C.h"
+
+class Nyclass {
+public:
+    Myclass();
+private:
+    A a;
+    B b;
+    C c;
+};
+```
+
+Yukarıdaki sınıfında gördüğünüz üzere üye elemanlarının için başlık dosyalarını dahil ettik fakat bu başlık dosyalarıda başka başlık dosyalarını onlarda başka başlık dosyalarını dahil edebilir. Böyle biz sadece 3 başlık dosyası dahil ettiğimizi düşünürüz fakat çok daha fazla kütüphane dahil etmiş olabiliriz.
+
+Bunu için pimple idiomu ile kullanırsak;
+
+```Cpp
+//myclass.h
+class Myclass {
+public:
+    Myclass();
+private:
+    struct Pimple;
+    Pimple* pimple;
+};
+
+//myclass.pp
+#include "A.h"
+#include "B.h"
+#include "C.h"
+
+struct Myclass::Pimple {
+    A a;
+    B b;
+    C c;
+};
+```
+
+Kaynak dosyalarınında, başlık dosyalarını tanımladık böylece başlık dosyamızı başka bir kaynak kodda kullanmak istediğimizde bir bağımlılık olmayacaktır.
 
 
-
+#### Composition
 
 
 
