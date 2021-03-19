@@ -1,11 +1,32 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <iomanip>
+#include <random>
 
 #include "date.h"
 
 constexpr static const char delimeter = ' ';
-static int pmonthDays[] = {0,31,28,31,30,31,30,31,31,30,31,30,31};
+static int pmonthDays[][13] = {{0,31,28,31,30,31,30,31,31,30,31,30,31},
+{0,31,29,31,30,31,30,31,31,30,31,30,31}};
+
+
+static bool isValidDate(int day, int month, int year) {
+    int x = Date::isleap(year) ? 1 : 0;
+    if(day<1||day>pmonthDays[x][month]) {
+        std::cerr << "Day is not correct number\n";
+        return false;
+    }
+    else if(month < 1 || month > 12) {
+        std::cerr << "Month is not correct number\n";
+        return false;
+    }
+    else if(year < Date::year_base) {
+        std::cerr << "Year is not correct number\n";
+        return false;
+    }
+    return true;
+}
 
 Date::Date(): Date(1,1,1900) //Delegating ctor
 {
@@ -14,23 +35,9 @@ Date::Date(): Date(1,1,1900) //Delegating ctor
 
 Date::Date(int d, int m, int y) : md(d), mm(m), my(y)
 {
-    if(isleap(my)) {
-        pmonthDays[2] = 29;
-    } else {
-        pmonthDays[2] = 28;
-    }
-    if(md<1||md>pmonthDays[mm]) {
-        std::cerr << "Day is not correct number\n";
+    if(isValidDate(md,mm,my)) {
         exit(EXIT_FAILURE);
-    }
-    else if(mm < 1 || mm > 12) {
-        std::cerr << "Month is not correct number\n";
-        exit(EXIT_FAILURE);
-    }
-    else if(my < year_base) {
-        std::cerr << "Year is not correct number\n";
-        exit(EXIT_FAILURE);
-    }
+    };
 }
 
 Date::Date(const char* p)
@@ -50,7 +57,7 @@ Date::Date(const char* p)
 
 Date::Date(time_t timer)
 {
-    tm* ltm = localtime(&timer);
+    auto ltm = std::localtime(&timer);
     set_year(year_base + ltm->tm_year);
     set_month(1+ltm->tm_mon);
     set_month_day(ltm->tm_mday);
@@ -74,13 +81,9 @@ int Date::get_year() const
 int Date::get_year_day() const
 {
     int ans = md,temp = mm;
-    if(isleap(my)) {
-        pmonthDays[2] = 29;
-    }else {
-        pmonthDays[2] = 28;
-    }
+    int x = isleap(my);
     while(temp--) {
-        ans += pmonthDays[temp];
+        ans += pmonthDays[x][temp];
     }
     return ans;
 }
@@ -126,7 +129,7 @@ Date::WeekDay Date::get_week_day() const
 
 Date& Date::set_month_day(int day)
 {
-    if(day < 0 || day > pmonthDays[mm])
+    if(day < 0 || day > pmonthDays[isleap(my)][mm])
     {
         std::cerr << "Please enter correct day\n";
         exit(EXIT_FAILURE);
@@ -154,11 +157,6 @@ Date& Date::set_year(int year)
         exit(EXIT_FAILURE);
     }
     my = year;
-    if(isleap(year)) {
-        pmonthDays[2] = 29;
-    } else {
-        pmonthDays[2] = 28;
-    }
     return *this;
 }
 
@@ -182,25 +180,17 @@ Date& Date::operator+=(int day)
     }
 
     int total_day = md+day;
-    int temp = pmonthDays[mm];
-    if(isleap(my)) {
-        pmonthDays[2] = 29;
-    } else {
-        pmonthDays[2] = 28;
-    }
+    int x = isleap(my);
+    int temp = pmonthDays[x][mm];
     while(total_day > temp) {
         if(mm>11) {
             mm = 0;
             ++my;
-            if(isleap(my)) {
-                pmonthDays[2] = 29;
-            }else {
-                pmonthDays[2] = 28;
-            }
+            x = isleap(my);
         }
-        temp += pmonthDays[++mm];
+        temp += pmonthDays[x][++mm];
     }
-    md = pmonthDays[mm] - (temp - total_day);
+    md = pmonthDays[x][mm] - (temp - total_day);
     return *this;
 }
 
@@ -211,23 +201,16 @@ Date& Date::operator-=(int day)
     }
 
     int total_day = md-day;
-    if(isleap(my)) {
-        pmonthDays[2] = 29;
-    } else {
-        pmonthDays[2] = 28;
-    }
+
+    int x = isleap(my);
 
     while(total_day < 0) {
         if(mm<2) {
             mm = 13;
             --my;
-            if(isleap(my)) {
-                pmonthDays[2] = 29;
-            }else {
-                pmonthDays[2] = 28;
-            }
+            x = isleap(my);
         }
-        total_day += pmonthDays[--mm];
+        total_day += pmonthDays[x][--mm];
     }
     md = total_day;
     return *this;
@@ -241,7 +224,7 @@ Date& Date::operator++()
 Date Date::operator++(int)
 {
     Date temp{*this};
-    (*this).operator+=(1);
+    ++(*this);
     return temp;
 }
 
@@ -259,45 +242,31 @@ Date Date::operator--(int)
 
 constexpr bool Date::isleap(int year)
 {
-    if (year % 4 != 0) {
-        return false;
-    } else if (year % 400 == 0) {
-        
-        return true;
-    } else if (year % 100 == 0) {
-        
-        return false;
-    } else {
-        return true;
-    }
+    return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
 }
 
 std::ostream &operator<<(std::ostream &os, const Date &date)
 {
     static const char* const pdays[] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
     if(date.get_month_day() < 10) {
-        os << '0';
+        os << std::setfill('0');
     }
     os << date.get_month_day() << delimeter;
     if(date.get_month() < 10) {
-        os << '0';
+        os << std::setfill('0');
     }
     return os << date.get_month() << delimeter << date.get_year() << delimeter
               << pdays[static_cast<int>(date.get_week_day())];
 }
 
 Date Date::random_date() {
-    srand(time(NULL));
-    int day,month,year;
-    year = (rand()%(random_max_year-random_min_year+1))+random_min_year;
-    month = rand()%12+1;
-    if(isleap(year)) {
-        pmonthDays[2] = 29;
-        day = rand()%(pmonthDays[month])+1;
-    } else {
-        pmonthDays[2] = 28;
-        day = rand()%(pmonthDays[month])+1;
-    }
+    std::default_random_engine generator;
+    std::uniform_int_distribution<int> distribution1(random_min_year,random_max_year);
+    std::uniform_int_distribution<int16_t> distribution2(1,12);
+    int year = distribution1(generator);  // generates number in the range 1..6 
+    int month = distribution2(generator);
+    std::uniform_int_distribution<int> distribution3(0,(pmonthDays[isleap(year)][month]));
+    int day = distribution3(generator);
     return Date{day,month,year};
 }
 

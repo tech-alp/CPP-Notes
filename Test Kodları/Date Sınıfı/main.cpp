@@ -1,6 +1,6 @@
 #include <ctime>
 #include <iostream>
-
+#include <random>
 #include "date.h"
 
 void test_randomDate() {
@@ -41,7 +41,7 @@ void test_operator_increment_decrement() {
 void test_compare_operator() {
     using namespace std;
     Date date1{time(NULL)};
-    Date date2 = Date::random_date();
+    Date date2{"10-02-2021"};
     Date date3{"18-05-2021"};
 
 //    Date date1,date2;
@@ -91,10 +91,11 @@ void test_weekday() {
 
 int main()
 {
+    
     std::cout << "**************** Test Increment Decrement ****************\n\n";
     test_operator_increment_decrement();
     std::cout << "\n************** Test Random Date *****************\n\n";
-    test_randomDate();
+    //test_randomDate();
     std::cout << "\n************** Test Compare Date *****************\n\n";
     test_compare_operator();
     std::cout << "\n************** Test Difference Date *****************\n\n";
