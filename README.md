@@ -1661,58 +1661,441 @@ int main() {
 ```
 1'in geçersiz 2'nin geçerli olması C++'ın kurallarından kaynaklanıyor. Auto ile belirsek hata değil fakat açık bir şekilde tanımlarsak hata olacakır.
 
-#### Pimple Idiom
+#### Piml Idiom(Pointer Implementation)
+Sınıfın private bölümünü gizlemeye yönellik geliştirilmiş bir idiom'dur.
+Ancak asıl kullanımı private bölümünü gizlemenin yanında bağımlığı azaltmasıdır. Böylelikle başlık dosyalarını, kaynak(`.cpp`) dosyasına ekleyeriz.
 
-Pointer implementation'ın kısaltmasıdır.
+Fakat bu idiomun dezavantajı heap alanında nesne oluşturmak zorunda olduğumuz için maliyeti arttırmış olacağız. Normal statik alanda 1 maliyetle işlem yapmamıza karşın heap'te oluşturduğumuz nesne ile 10 belki 20 maliyet işlem yapıyor olabiliriz.
 
-Sınıfın private bölümünü gizlemeye denir. Asıl önemli kullanımı başlık dosyasında üye elemanları için başlık dosyası dahil etmeyeceğimizden bağımlılığı azaltmış oluruz. Veri elemanları heap'te oluşacağı için bunun bir `maliyeti` vardır.
-
-```Cpp
-#include "A.h"
-#include "B.h"
-#include "C.h"
-
-class Nyclass {
-public:
-    Myclass();
-private:
-    A a;
-    B b;
-    C c;
-};
-```
-
-Yukarıdaki sınıfında gördüğünüz üzere üye elemanlarının için başlık dosyalarını dahil ettik fakat bu başlık dosyalarıda başka başlık dosyalarını onlarda başka başlık dosyalarını dahil edebilir. Böyle biz sadece 3 başlık dosyası dahil ettiğimizi düşünürüz fakat çok daha fazla kütüphane dahil etmiş olabiliriz.
-
-Bunu için pimple idiomu ile kullanırsak;
 
 ```Cpp
 //myclass.h
+class A;
+class B;
+class C;
 class Myclass {
 public:
-    Myclass();
+    Myclass(A a, B b, C c);
+    ~Myclass();
+    A get_A();
+    B get_B();
+    C get_C();
 private:
-    struct Pimple;
-    Pimple* pimple;
+    class Implementation;
+    Implementation* m_imp;
 };
 
-//myclass.pp
+//myclass.cpp
 #include "A.h"
 #include "B.h"
 #include "C.h"
 
-struct Myclass::Pimple {
+class Myclass::Implementation {
+public:
+    Implementation(A& _a, B& _b, C& _c) : a(_a), b(_b), c(_c) 
+    {
+    }
     A a;
     B b;
     C c;
 };
+
+Myclass::Myclass(A a, B b, C c) {
+    m_imp = new Implementation(a,b,c);
+}
+
+Myclass::~Myclass() {
+    if(m_imp) {
+        delete m_imp;
+        std::cout << "m_imp deleted\n";
+    }
+}
+
+A Myclass::get_A() {
+    return m_imp->a;
+}
+
+B Myclass::get_B() {
+    return m_imp->b;
+}
+
+C Myclass::get_C() {
+    return m_imp->c;
+}
 ```
-
-Kaynak dosyalarınında, başlık dosyalarını tanımladık böylece başlık dosyamızı başka bir kaynak kodda kullanmak istediğimizde bir bağımlılık olmayacaktır.
-
 
 #### Composition
 
+Compotion ile oluşturduğumuz nesneler arasında `Has-a` relationship vardır. Örneğin Human adında bir sınıfımız var ve içerisinde Heart adında bir sınıf nesnesi barındıryor olsun ne zamanki human nesnesi sonlandırılırsa o zaman Heart nesneside sonlanacaktır. Tipik gösterimi aşağıdaki gibidir.
+
+```Cpp
+#include "Heart"
+class Human {
+public:
+    Human() {
+        m_h = new Heart();
+    }
+    ~Human() {
+        if(m_h)
+            delete m_h;
+    }
+private:
+    Heart* m_h;
+};
+```
+
+Hiyerarşi aşağıdaki gibidir. 
+
+- association
+    - aggregation
+        - composition
+
+Her composition bir aggregation, her aggregation da bir association'dır. Fakat bunun tersi doğru değildir.
+
+#### Aggreagation
+
+Aggreagation ile oluşturduğumuz nesneler arasında da `Has-a` relationship vardır. Fakat compotion'dan farklı olarak nesnenin hayatı sonlandığında sahip olduğu nesnenin'de hayatını sonlandırmaz. Örneğin, Team adında bir sınıfımız olsun ve içerisinde Player adında bir üye sınıf nesnesi tutuyor olsun. Aralarında has-a relationship var `Team has a player`, fakat team ile oluşturduğumuz nesnenin hayatı sonlandığında player hala hayatta olacaktır. Tipik gösterimi aşağıdaki gibidir.
+
+```Cpp
+
+class Team {
+public:
+    Team(Player& player) : m_p(player) {}
+private:
+    Player m_p;
+};
+
+```
 
 
+#### Delegating Constructor
+
+Delegating constructor ile birden fazla oluşturulan constructorlar arasında __kod tekrarı yapmamak__ için kullanılır. Default member initializer ile kullanılır.
+
+Modern C++'tan önce delegating constructor yardımcı fonksiyon kullanarak gerçekleştirilmeye çalışılırdı.
+
+```Cpp
+class Myclass {
+public:
+    Myclass() { init(); }
+    Myclass(int a) { init(a); }
+    Myclass(int a, int b) { init(a,b); }
+private:
+    int ma;
+    int mb;
+    void init(int a = 0, int b = 0) {
+        ma = a;
+        mb = b;
+    }
+};
+```
+
+Bu şekilde kod tekrarı yapmadık fakat üye değişkenleride ilk değer olarak başlatmış olmadık. Atama ile değişkenleri oluşturduk. İşte tam da bu noktada delegating contructor bu sorunu çözmemizi sağlıyor.
+
+```Cpp
+class Myclass {
+public:
+    Myclass() : Myclass(0,0) { }
+    Myclass(int a) : Myclass(a,0) { }
+    Myclass(int a , int b) : ma(a), mb(b) { }
+private:
+    int ma;
+    int mb;
+};
+```
+
+Gördüğünüz üzere kod tekrarına düşmemekle birlikte ilk değer ile üye değişkenlerini başlatmış olduk.
+
+
+#### Raw String Literal
+
+ Bir string literal C++'da bir ifade de kullanılacaksa sadece `const char*` olarak kullanılabilir. C'de ise bu `char[]` olarak tanımlanır. String sabitleri escape sequence'lar ile kullanılabilir.
+
+ | Escape Sequence  | Description    |
+ |       ---        |     ---        |
+ | \\'              | single quote   |
+ | \\"              | double quote	 |
+ | \\?              | question mark	 |
+ | \\\              | backslash      |
+ | \\a              | audible bell	 |
+ | \\b              | backspace      |
+ | \\f              | form feed      |
+ | \\n              | line feed      |
+ | \\r              | carriage return|
+ | \\t              | horizontal tab |
+ | \\v              | vertical tab   |
+
+ ```Cpp
+#include <iostream>
+
+int main() {
+    
+    const char* ch1 = "FooBar";
+    const char ch2[] = "Foo\
+Bar";
+    char ch3[] = "Foo" "Bar";
+
+    std::cout << ch1 << '\n';
+    std::cout << ch2 << '\n';
+    std::cout << ch3 << '\n';
+
+    const char* str1 = "\nHello\n World\n";
+    const char* str2 = R"foo(
+Hello
+ World
+)foo";
+    const char* str3 = "\n"
+                       "Hello\n"
+                       " World\n";
+    std::cout << str1 << str2 << str3;
+}
+// FooBar
+// FooBar
+// FooBar
+// Hello
+//  World
+
+// Hello
+//  World
+
+// Hello
+//  World
+ ```
+
+ ---
+ 
+### Namespaces
+
+İsimlerin çakışmasını önlemek amacıyla kullanılır.
+
+* Namespace bir namespace içerisinde olmalıdır.
+
+* Local düzeyde namespace oluşturulamaz.
+
+* Global namespace içerisinde namespace oluşturmak geçerli fakat main içerisinde namespace oluşturulamaz.
+
+Scope kategorileri;
+
+- Namespace scope  &#8594; C'de file scope
+- Class scope  &#8594; C'de yok
+- Block scope
+- Function scope
+- Function prototype scope
+
+```Cpp
+namespace ali {
+    namespace veli {
+        int x, y;
+    } 
+}
+ali::veli::x = 13;
+ali::veli::y = 13;
+```
+
+> Asla başlık dosyalarında using bildirimi veya using namespace bildirimi yapmayın.
+
+Eğer aynı isim alanı birden fazla kullanılırsa, derleyici bu isim alanları içerisindeki ifadeleri birleştirir. Bu kütüphaneleri farklı başlık dosyalarına ayrımak için oldukça faydalıdır. Örneğin statndart kütüphanede vector, string, array, bitset, map vb. gibi bir çok kütüphane `std namespace` isim alanı içerisindedir.
+```Cpp
+namespace enes {
+    int x,y;
+}
+
+namespace enes {
+    int a,b;
+}
+
+enes::a = 13; //Geçerli
+enes::x = 13; //Geçerli
+```
+
+İç içe birden fazla isim alanı kullanılması durumunda;
+
+```Cpp
+namespace A {
+    namespace B {
+        namespace C {
+        }
+    }
+}
+```
+bu şekilde kullanmak yerine;
+
+```Cpp
+namespace A::B::C {
+}
+```
+Modern C++ ile yanyana yazılabiliyor.
+
+İsimlerin nitelenmeden kullanabilmek için;
+
+* using decleration
+
+* using namespace decleration
+
+* Argument Dependent Lookup(ADL)
+
+bu 3'ünden biri olması gerekmektedir.
+
+
+#### Using Decleration
+
+Sunig bildiriminin bir spoce'u var ve bildirilen ismi o scope içerisine enjekte ediyor.
+
+> Using bildirimi kullanılacaksa en dar scope'da kullanılmalı, eğer kullanılan kapsam yeterli değilse bir üst scope'da o da yeterli değil ise en son global düzeyde yapılmalı.
+
+```Cpp
+namespace A {
+    int x;
+}
+using A::x;
+void func() {
+    x = 10;
+}
+int main() {
+    x = 10;
+}
+```
+
+C++17 ile birlikte using bildirimi ile artık birden fazla tanım yapılabilmektedir.
+
+C++17'den önce `using A::x; using A::b;` şeklinde kullanılırken C++17 ile `using A::x, A::y` şeklinde kullanılabilmektedir.
+
+#### Using Namespace Decleration
+
+`using namespace` bildirimi kullanıldığı zaman, kullanılan namespace ismi sanki hiç yapılmamış gibi davranır.
+
+```Cpp
+#include <string>
+#include <iostream>
+class Myclass {
+   void func() {
+       using namespace std;
+       string str = "Enes";
+       cout << str << endl;
+       ///
+   } 
+};
+```
+
+using namepace bildirimi yapabilmek için bildirimi yapılacak isimin görünür olması gerekir ve bildirim ya local scope'da ya da bir namespace içerisinde yapılmalıdır.
+
+```Cpp
+class Myclass {
+    using namespace std; // Geçersiz
+    //using bildirimi ilk olarak görünür değil, görünür olsa bile class scope içerisinde bildirilemez.
+};
+```
+
+#### Argument Dependent Lookup(ADL)
+
+Fonksiyona argüman olarak gönderilen ifade bir namespace içerisinde tanımlanan türlerden birine `ilişkinse` o zaman bu isim normal arandığı yerin dışında bu isim ait olduğu namespace `içinde de` aranır.
+
+```Cpp
+namespace enes {
+    class Myclass {
+        ///
+    };
+    void foo(Myclass);
+    void func(int);
+}
+int main() {
+    enes::Myclass mx;
+    foo(mx);  //Geçerli
+    func(12); //Geçersiz
+}
+```
+
+Namespace içerisinde tanımlanan tür eş isimlerinde bir istisna, eğer tür o namespace içerisindeki bir tür eş ismi değilse o namespace içerisinde aranmaz.
+
+```Cpp
+namespace enes {
+    enum Color { White, Red, Green}
+    typedef int Word;
+    typedef Color Ctype;
+    void foo(Word);
+    void func(Ctype);
+}
+int main() {
+    enes::Word wx = 15;
+    enes::Ctype cx = enes::White;
+    foo(wx);  //Geçersiz
+    func(cx); //Geçerli
+}
+```
+
+Programlamaya ilk giriş kodlarında sıklıkla kullanılan Hello World programında ADL var mıdır?
+```Cpp
+int main(){
+    std::cout << "Hello World";
+    operator<<(std::cout,"Hello World");
+    //görüldüğü üzere std::cout operator left shift fonk. argüman olarak gönderildi.
+    //Böylece operator left shift std isim alanında da arandı ve bulundu.
+}
+```
+
+Peki `std::cout << "Hello World" << endl;` geçerli midir?
+
+```Cpp
+int main() {
+    std::cout << "Hello World" << endl; //Geçersiz
+    operator<<(std::cout,"Hello World").operator<<(endl); //Geçersiz
+}
+```
+
+#### Inline Namespace
+
+İç içe namespacelerde en içteki isim alanını bir üstteki isim alanına görünür yapabilmek için using namespace bildirimi yapmak dilin sentaksı açısından bir problem gibi görünmesede hatadır. Bu C++ dilinin çelişkili bir yapısıdır.
+
+```Cpp
+namespace A {
+    namespace B {
+        namespace C {
+            int x;
+        }
+        using namespace C;
+    }
+}
+A::B::x = 13; //Geçersiz çünkü C B'de görünür olmuyor
+```
+
+Fakat bu yapıyı inline namespace oluşturabiliyoruz.
+
+```Cpp
+namespace A {
+    namespace B {
+        inline namespace C {
+            int x;
+        }
+    }
+}
+A::B::x = 13; //Geçerli
+```
+
+
+#### Unnamed Namespace
+
+Asıl kullanımı isimlerin bağlantı özelliği ile ilgilidir.
+
+İsimlerin bağlantı özellikleri;
+1. external linkage
+2. internal linkage
+3. No linkage
+olabilir.
+
+__External linkage:__ Bir isim birden fazla kaynak dosyasına bağlanıyor fakat aynı varlığı gösteriyorsa external linkage aittir.
+
+> Eğer bir ismi iç bağlantıya almak istiyorsanız neyin ismi olursa olsun bir isimsiz isim alanına alın.
+
+```Cpp
+namespace {
+    int x = 13;
+    void func(int) {}
+}
+int main() {
+    x = 20;
+    func(x);
+}
+```
+
+C'de normalde bunu static olarak tanımlayarak iç bağlantoya alıyorduk bu C++'ta da geçerli fakat isimisiz isim alanına almak kodu daha derli toplu gösterir. C++17 ile `deprecated` edilen statik fonksiyon tanımı olmadığı için zaten mecburen iç bağlantıya dahil etmek istediğimiz statik fonksiyonları isimsiz isim alanlarına almak zorundayız.
 
