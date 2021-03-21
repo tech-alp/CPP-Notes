@@ -18,16 +18,6 @@
     </style>
 -->
 
-## Value Category
-
-- RValue reference -> type category.
-
-- LValue reference -> type category
-
-- RValue -> value category
-
-- LValue -> value category
-
 ## Reference
 
 ```txt
@@ -41,6 +31,19 @@
         /     \      /     \
     lvalue     xvalue     prvalue
 ```
+
+#### Value Category
+
+- RValue
+
+- LValue
+
+#### Type Category
+
+- RValue reference
+
+- LValue reference
+
 **Rvalue:** Taşınabilir fakat bellekte herhangi bir adresi yok.
 
 __Lvalue:__ İsim formundaki yani bellekte yer tutan nesnelerin değer kategorisidir.
@@ -393,6 +396,8 @@ void func(const int);
 #### Enum:
 
 > C'den farklı olarak underlying type vardır.
+
+Enum'larda underlying(base) type sabit değildir. Böylece enumların temel tipi bir `implementation defined integral type`'dır.
 
 ```C++
 enum Color : char {
@@ -1447,7 +1452,7 @@ Incomplete type olarak tanımlama yapmanın en önemli nedeni başlık dosyalar�
 class Myclass {
     static double x = 13.3;     //Sentaks hatası
     static int y = 13;          //Sentaks hatası
-    static const int z = 13;    // Geçerli
+    static const int z = 13;    //Geçerli
     static const float f = 13.f //Sentaks hatası
 };
 ```
@@ -1512,7 +1517,8 @@ int main() {
 }
 ```
 
-Eğer sınıf türünden sadece dinamik ömürlü nesne oluşturmak istersek statik üye fonksiyonu tanımlamız gerekir. Bunun statik olmasının nedeni doğrudan sınıf nesnesi oluşturmadan kullanmak ki zaten sınıfın kurucu üye fonksiyonu private kısmıma taşıayarak sadece bu statik üye değişkeni üzerinden nesneyi oluşturmak.
+Eğer sınıf türünden sadece dinamik ömürlü nesne oluşturmak istersek statik üye fonksiyonu tanımlamamız gerekir. Bunun statik olmasının nedeni doğrudan sınıf nesnesi oluşturmadan kullanmak ki zaten sınıfın kurucu üye fonksiyonu private kısmıma taşıyarak sadece bu statik üye değişkeni üzerinden nesneyi oluşturmak.
+
 ```Cpp
 class Myclass {
 public:
@@ -1525,6 +1531,43 @@ private:
 
 Myclass m; //Sentaks hatası(Sınıfın constructor'ına erişim yok)
 Myclass* n = Myclass::createObject(); //Geçerli
+```
+
+Singleton(tek nesne örüntüsü) günümüzde pek tercih edilmemektedir hatta bazen anti-patern olarakta görebilmekteyiz bunu sebebi çok fazla kod singleton olarak yazılıp sonradan bu sınıfın singletondan çıkması durumunda yaşanan kod karmaşasıdır.
+
+```Cpp
+class Myclass {
+public:
+    static Myclass& get_instance() {
+        if(!smp) {
+            smp = new Myclass;
+        }
+        returm *smp;
+    }
+    void func();
+    void foo();
+    ///
+private:
+    Myclass();
+    inline static Myclass* smp{nullptr};
+};
+```
+
+Meyer's Singleton Class
+
+```Cpp
+class Myclass {
+public:
+    static Myclass& get_instance() {
+        static Myclass singleton;
+        return singleton;
+    }
+    void func();
+    void foo();
+    ///
+private:
+    Myclass();
+};
 ```
 
 #### if with initialization
@@ -1545,7 +1588,7 @@ Normalde üsteki fonksiyonu C++17'den önce `int val = func(); if(val > 10){++va
 
 ---
 
-> patern ile idiom arasındaki fark patern genel dillerdeki kullanılabilen kalıplarken, idiom dile özgüdür. Örneğin singleton, C++ singleton, C# singleton, Java singleton... gibi örnekler paterne örnektir. C++ RAII ise bir idiom'dur sadece C++ diline özgüdür genellik yoktur.
+> patern ile idiom arasındaki fark patern genel dillerdeki kullanılabilen kalıplarken, idiom dile özgüdür. Örneğin singleton, C++ singleton, C# singleton, Java singleton... gibi örnekler paterne örnektir. C++ RAII ise bir idiom'dur sadece C++ diline özgüdür, genellik yoktur.
 
 #### Inline Variable
 
@@ -1564,9 +1607,63 @@ class Myclass {
 };
 ```
 
+Bir sınıf içerisinde;
+
+1. Data Members
+
+    - static data members
+    
+    - non-static data members
+
+2. Member Function
+
+    - static member function
+
+    - non-static member function
+
+        - const member function
+
+        - non-const member function
+
+3. Member Types
+
+olacak şekilerde ifadeler tanımlanabilir.
+
+#### Nested Type
+
+```Cpp
+class Myclass {
+    class Nested {
+        //...
+    };
+    Nested func();
+    void foo(Nested);
+};
+```
+
+```Cpp
+class Encloser {
+    static void func();
+    int mx;
+    class Nested {
+        void foo() {
+            func(); //Geçerli
+            auto n = sizeof mx; //Geçerli
+        }
+    };
+};
+
+int main() {
+    Myclass mx;
+    Myclass::Nested retval = mx.foo(); //Geçersiz   1.
+    auto retval2 = mx.foo();           //Geçerli    2.
+}
+```
+1'in geçersiz 2'nin geçerli olması C++'ın kurallarından kaynaklanıyor. Auto ile belirsek hata değil fakat açık bir şekilde tanımlarsak hata olacakır.
+
 #### Piml Idiom(Pointer Implementation)
 Sınıfın private bölümünü gizlemeye yönellik geliştirilmiş bir idiom'dur.
-Ancak asıl kullanımı private bölümünü gizlemenin yanında bağımlığı azaltmasıdır. Böylelikle başlık dosyalarını `.cpp` dosyasına ekleyeriz.
+Ancak asıl kullanımı private bölümünü gizlemenin yanında bağımlığı azaltmasıdır. Böylelikle başlık dosyalarını, kaynak(`.cpp`) dosyasına ekleyeriz.
 
 Fakat bu idiomun dezavantajı heap alanında nesne oluşturmak zorunda olduğumuz için maliyeti arttırmış olacağız. Normal statik alanda 1 maliyetle işlem yapmamıza karşın heap'te oluşturduğumuz nesne ile 10 belki 20 maliyet işlem yapıyor olabiliriz.
 
@@ -1675,7 +1772,7 @@ private:
 
 Delegating constructor ile birden fazla oluşturulan constructorlar arasında __kod tekrarı yapmamak__ için kullanılır. Default member initializer ile kullanılır.
 
-Modern C++'tan önce delegating constructor yardımcı fonklsiyon kullanarak gerçekleştirilmeye çalışılırdı.
+Modern C++'tan önce delegating constructor yardımcı fonksiyon kullanarak gerçekleştirilmeye çalışılırdı.
 
 ```Cpp
 class Myclass {
@@ -1731,7 +1828,6 @@ Gördüğünüz üzere kod tekrarına düşmemekle birlikte ilk değer ile üye 
  ```Cpp
 #include <iostream>
 
-
 int main() {
     
     const char* ch1 = "FooBar";
@@ -1756,7 +1852,6 @@ Hello
 // FooBar
 // FooBar
 // FooBar
-
 // Hello
 //  World
 
@@ -1769,4 +1864,238 @@ Hello
 
  ---
  
- #### Namespaces
+### Namespaces
+
+İsimlerin çakışmasını önlemek amacıyla kullanılır.
+
+* Namespace bir namespace içerisinde olmalıdır.
+
+* Local düzeyde namespace oluşturulamaz.
+
+* Global namespace içerisinde namespace oluşturmak geçerli fakat main içerisinde namespace oluşturulamaz.
+
+Scope kategorileri;
+
+- Namespace scope  &#8594; C'de file scope
+- Class scope  &#8594; C'de yok
+- Block scope
+- Function scope
+- Function prototype scope
+
+```Cpp
+namespace ali {
+    namespace veli {
+        int x, y;
+    } 
+}
+ali::veli::x = 13;
+ali::veli::y = 13;
+```
+
+> Asla başlık dosyalarında using bildirimi veya using namespace bildirimi yapmayın.
+
+Eğer aynı isim alanı birden fazla kullanılırsa, derleyici bu isim alanları içerisindeki ifadeleri birleştirir. Bu kütüphaneleri farklı başlık dosyalarına ayrımak için oldukça faydalıdır. Örneğin statndart kütüphanede vector, string, array, bitset, map vb. gibi bir çok kütüphane `std namespace` isim alanı içerisindedir.
+```Cpp
+namespace enes {
+    int x,y;
+}
+
+namespace enes {
+    int a,b;
+}
+
+enes::a = 13; //Geçerli
+enes::x = 13; //Geçerli
+```
+
+İç içe birden fazla isim alanı kullanılması durumunda;
+
+```Cpp
+namespace A {
+    namespace B {
+        namespace C {
+        }
+    }
+}
+```
+bu şekilde kullanmak yerine;
+
+```Cpp
+namespace A::B::C {
+}
+```
+Modern C++ ile yanyana yazılabiliyor.
+
+İsimlerin nitelenmeden kullanabilmek için;
+
+* using decleration
+
+* using namespace decleration
+
+* Argument Dependent Lookup(ADL)
+
+bu 3'ünden biri olması gerekmektedir.
+
+
+#### Using Decleration
+
+Sunig bildiriminin bir spoce'u var ve bildirilen ismi o scope içerisine enjekte ediyor.
+
+> Using bildirimi kullanılacaksa en dar scope'da kullanılmalı, eğer kullanılan kapsam yeterli değilse bir üst scope'da o da yeterli değil ise en son global düzeyde yapılmalı.
+
+```Cpp
+namespace A {
+    int x;
+}
+using A::x;
+void func() {
+    x = 10;
+}
+int main() {
+    x = 10;
+}
+```
+
+C++17 ile birlikte using bildirimi ile artık birden fazla tanım yapılabilmektedir.
+
+C++17'den önce `using A::x; using A::b;` şeklinde kullanılırken C++17 ile `using A::x, A::y` şeklinde kullanılabilmektedir.
+
+#### Using Namespace Decleration
+
+`using namespace` bildirimi kullanıldığı zaman, kullanılan namespace ismi sanki hiç yapılmamış gibi davranır.
+
+```Cpp
+#include <string>
+#include <iostream>
+class Myclass {
+   void func() {
+       using namespace std;
+       string str = "Enes";
+       cout << str << endl;
+       ///
+   } 
+};
+```
+
+using namepace bildirimi yapabilmek için bildirimi yapılacak isimin görünür olması gerekir ve bildirim ya local scope'da ya da bir namespace içerisinde yapılmalıdır.
+
+```Cpp
+class Myclass {
+    using namespace std; // Geçersiz
+    //using bildirimi ilk olarak görünür değil, görünür olsa bile class scope içerisinde bildirilemez.
+};
+```
+
+#### Argument Dependent Lookup(ADL)
+
+Fonksiyona argüman olarak gönderilen ifade bir namespace içerisinde tanımlanan türlerden birine `ilişkinse` o zaman bu isim normal arandığı yerin dışında bu isim ait olduğu namespace `içinde de` aranır.
+
+```Cpp
+namespace enes {
+    class Myclass {
+        ///
+    };
+    void foo(Myclass);
+    void func(int);
+}
+int main() {
+    enes::Myclass mx;
+    foo(mx);  //Geçerli
+    func(12); //Geçersiz
+}
+```
+
+Namespace içerisinde tanımlanan tür eş isimlerinde bir istisna, eğer tür o namespace içerisindeki bir tür eş ismi değilse o namespace içerisinde aranmaz.
+
+```Cpp
+namespace enes {
+    enum Color { White, Red, Green}
+    typedef int Word;
+    typedef Color Ctype;
+    void foo(Word);
+    void func(Ctype);
+}
+int main() {
+    enes::Word wx = 15;
+    enes::Ctype cx = enes::White;
+    foo(wx);  //Geçersiz
+    func(cx); //Geçerli
+}
+```
+
+Programlamaya ilk giriş kodlarında sıklıkla kullanılan Hello World programında ADL var mıdır?
+```Cpp
+int main(){
+    std::cout << "Hello World";
+    operator<<(std::cout,"Hello World");
+    //görüldüğü üzere std::cout operator left shift fonk. argüman olarak gönderildi.
+    //Böylece operator left shift std isim alanında da arandı ve bulundu.
+}
+```
+
+Peki `std::cout << "Hello World" << endl;` geçerli midir?
+
+```Cpp
+int main() {
+    std::cout << "Hello World" << endl; //Geçersiz
+    operator<<(std::cout,"Hello World").operator<<(endl); //Geçersiz
+}
+```
+
+#### Inline Namespace
+
+İç içe namespacelerde en içteki isim alanını bir üstteki isim alanına görünür yapabilmek için using namespace bildirimi yapmak dilin sentaksı açısından bir problem gibi görünmesede hatadır. Bu C++ dilinin çelişkili bir yapısıdır.
+
+```Cpp
+namespace A {
+    namespace B {
+        namespace C {
+            int x;
+        }
+        using namespace C;
+    }
+}
+A::B::x = 13; //Geçersiz çünkü C B'de görünür olmuyor
+```
+
+Fakat bu yapıyı inline namespace oluşturabiliyoruz.
+
+```Cpp
+namespace A {
+    namespace B {
+        inline namespace C {
+            int x;
+        }
+    }
+}
+A::B::x = 13; //Geçerli
+```
+
+
+#### Unnamed Namespace
+
+Asıl kullanımı isimlerin bağlantı özelliği ile ilgilidir.
+
+İsimlerin bağlantı özellikleri;
+1. external linkage
+2. internal linkage
+3. No linkage
+olabilir.
+
+__External linkage:__ Bir isim birden fazla kaynak dosyasına bağlanıyor fakat aynı varlığı gösteriyorsa external linkage aittir.
+
+> Eğer bir ismi iç bağlantıya almak istiyorsanız neyin ismi olursa olsun bir isimsiz isim alanına alın.
+
+```Cpp
+namespace {
+    int x = 13;
+    void func(int) {}
+}
+int main() {
+    x = 20;
+    func(x);
+}
+```
+
+C'de normalde bunu static olarak tanımlayarak iç bağlantoya alıyorduk bu C++'ta da geçerli fakat isimisiz isim alanına almak kodu daha derli toplu gösterir. C++17 ile `deprecated` edilen statik fonksiyon tanımı olmadığı için zaten mecburen iç bağlantıya dahil etmek istediğimiz statik fonksiyonları isimsiz isim alanlarına almak zorundayız.
+
