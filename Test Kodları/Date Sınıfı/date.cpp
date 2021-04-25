@@ -248,12 +248,16 @@ constexpr bool Date::isleap(int year)
 std::ostream &operator<<(std::ostream &os, const Date &date)
 {
     static const char* const pdays[] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+    char prev;
     if(date.get_month_day() < 10) {
-        os << std::setfill('0');
+        prev = os.fill('0');
+        os << os.fill(prev);
     }
     os << date.get_month_day() << delimeter;
+
     if(date.get_month() < 10) {
-        os << std::setfill('0');
+        prev = os.fill('0');
+        os << os.fill(prev);
     }
     return os << date.get_month() << delimeter << date.get_year() << delimeter
               << pdays[static_cast<int>(date.get_week_day())];

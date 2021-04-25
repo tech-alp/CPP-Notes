@@ -55,7 +55,7 @@ int operator-(const Date &d1, const Date &d2);
 inline bool operator<(const Date& lhs, const Date& rhs)
 {
     return lhs.my != rhs.my ? lhs.my < rhs.my : 
-    lhs.mm != rhs.mm ? lhs.mm < rhs.mm : lhs.md < rhs.md;
+    (lhs.mm != rhs.mm ? lhs.mm < rhs.mm : lhs.md) < rhs.md;
 
 }
 
