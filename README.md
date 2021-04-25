@@ -1864,7 +1864,7 @@ Hello
 
  ---
  
-### Namespaces
+## Namespaces
 
 İsimlerin çakışmasını önlemek amacıyla kullanılır.
 
@@ -2071,16 +2071,15 @@ namespace A {
 A::B::x = 13; //Geçerli
 ```
 
-
-#### Unnamed Namespace
-
-Asıl kullanımı isimlerin bağlantı özelliği ile ilgilidir.
-
-İsimlerin bağlantı özellikleri;
-1. external linkage
-2. internal linkage
-3. No linkage
-olabilir.
+### Namespace Alias
+```Cpp
+namespace Enes {
+    int x,y;
+}
+namespace pro = Enes;
+pro::x = 13;
+pro::y = 13;
+```
 
 __External linkage:__ Bir isim birden fazla kaynak dosyasına bağlanıyor fakat aynı varlığı gösteriyorsa external linkage aittir.
 
@@ -2097,5 +2096,286 @@ int main() {
 }
 ```
 
-C'de normalde bunu static olarak tanımlayarak iç bağlantoya alıyorduk bu C++'ta da geçerli fakat isimisiz isim alanına almak kodu daha derli toplu gösterir. C++17 ile `deprecated` edilen statik fonksiyon tanımı olmadığı için zaten mecburen iç bağlantıya dahil etmek istediğimiz statik fonksiyonları isimsiz isim alanlarına almak zorundayız.
+C'de normalde bunu static olarak tanımlayarak iç bağlantıya alıyorduk bu C++'ta da geçerli fakat isimsiz isim alanına almak kodu daha derli toplu gösterir. C++17 ile statik fonksiyon tanımı `deprecated` edildiği için zaten mecburen iç bağlantıya dahil etmek istediğimiz statik fonksiyonları isimsiz isim alanlarına almak zorundayız.
+
+---
+
+## String Sınıfı
+
+String bir tür eş ismidir. std::basic_string<> şablonu ile tanımlanır.
+
+```Cpp
+namespace std { 
+    template <typename charT,
+              typename traits = char_traits<charT>,
+              typename Allocator = allocator<charT> >
+              class basic_string; 
+}
+namespace std { 
+    typedef basic_string<char> string;
+} 
+```
+
+String sınıfı verileri heap'te tutar. Fakat küçük yazılar ortalama bir yazıda çok fazla kullanıldığı için `Derleyiciler` string sınıfının veri elemanını heapte tutmak yerine '16-20' arasında derleyiciden derleyiciye değişmekle birlikte bir char dizi elemanında tutarlar. Bu optimizasyon tekniğine `SBO(Small Buffer Optimization)` veya `SSO(Small String Optimization)` denir.
+
+```Cpp
+cout << "sizeof(int*) = " << sizeof(int*) << '\n';
+cout << "sizeof(string*) = " << sizeof(string*) << '\n';
+```
+
+| Arguments  |  Interpretation | 
+| :--- | :--- |
+|const string & str | The whole string str |
+|const string & str, size_type idx, size_type num | At most, the first num characters |of str starting with index idx|
+|const char* cstr | The whole C-string cstr |
+|const char* chars, size_type len | len characters of the character array chars |
+|char c | The character c |
+|size_type num, char c | num occurrences of character c |
+|const_iterator beg, const_iterator end  | All characters in range |[beg,end) initlistAll characters in initlist (since C++11) |
+
+| Expression | Effect | 
+| :--- | :--- |
+| string s | Creates the empty string s |
+| string s(str) |Copy constructor; creates a string as a copy of the existing string str string |
+| s(rvStr) | Move constructor; creates a string and moves the contents of rvStr to it (rvStr has a valid state with undefined value afterward) |
+| string s(str,stridx) | Creates a string s that is initialized by the characters of string str starting with index stridx |
+| string s(str,stridx,strlen) | Creates a string s that is initialized by, at most, strlen characters of string str starting with index stridx | 
+| string s(cstr) | Creates a string s that is initialized by the C-string cstr |
+| string s(chars,charslen) | Creates a string s that is initialized by charslen characters of the character array chars |
+| string s(num,c) | Creates a string that has num occurrences of character c | 
+| string s(beg,end) | Creates a string that is initialized by all characters of the range [beg,end) | 
+| string s(initlist) | Creates a string that is initialized by all characters in initlist (since C++11) |
+| s.~string() | Destroys all characters and frees the memory |
+
+
+```Cpp
+int main() {
+    string str("Cansu Uca",5); //Data ctor
+    cout << str << '\n';
+    string str2("Enes Alp",5,string::npos); // substring
+    cout << str2 << '\n';
+    string str3(20,'x') // Fill
+    cout << str3 << '\n';
+    string str4 = {'E','n','e','s',' ','A','l','p'}; // initializer list
+    cout << str4 << '\n';
+    string str5("Enes Alp"); //cstring
+    cout << str5 << '\n';
+}
+```
+
+Eğer substring parametre söz konusu olduğunda string'te tutulan dizinden daha büyük parametre istenildiğinde string içindeki tüm parametreleri alır 'Undefined Behaviour' olmaz. Fakat bu Date ctor için yapılırsa 'UB' olur.
+
+<!--
+*__STL__*
+
+- Container
+- Algorithm
+- Iterator
+
+Sequence Containers | Associative Containers | Unordered Associative Containers |
+| :---: | :---: |  :---: |
+| vector | set | unordered-set |
+| deque | multiset | unordered-multiset|
+| list | map | unordered-map |
+| forward-list | multimap | unordered-multimap |
+| array | - | - |
+| __string__ | - | - |
+-->
+## Inheritance
+
+Aynı arayüzü destekleyen farklı sınıfların aynı türdenmiş gibi kullanılabilmesini sağlayan ve eskiden yazılmış kodları daha sonra yazılacak kodların kullanmasını sağlayan bir mekanizmadır.
+
+![](images/inheritance-1.png)
+
+C++'da kalıtım
+
+- public inheritance %80 &#8594; Java,C#...
+- private inheritance
+- protected inheritance
+
+olmak üzere 3 farklı şekilde yapılabilir.
+
+Kalıtım tıpkı composition'da olduğu gibi bir sınıf nesnesinin içinde fiziksel olarak başka bir sınıf nesnesi vardır. Ancak composition'da bu içerilen nesneye `member object` denilir. Kalıtımda ise içerilen nesne `base class object` denilir.
+
+![](images/inheritance-2.png)
+
+Her `der` nesnesi içerisinde bir `base` nesnesi vardır.
+
+```C++
+class Base {
+public:
+    void func();
+};
+class Der : public Base {
+public:
+    void func(int);
+};
+int main() {
+    Der myder;
+    myder.func(); //Sentaks hatası
+    myder.Base::func(); // Geçerli
+}
+```
+
+Sentaks hatası olmasının sebebi `namelookup`'tır. İsim arama ile isim ilk olarak 'der' sınıfı içerisinde arandı ve bulundu(bulunduktan sonra ise base içerisinde de aramam yapılmaz çünkü isim arama bir kere yapılır bulunursa sona erer daha sonra context kontrol yapılır). Context kontrol ile `func()` fonksiyonun int parametresi olduğu anlaşıldı ve senktaks hatası oldu. Lakin base'in `func()`fonksiyonu çağrılmak isteniyorsa niteleme yaparak çağrılır(myder.Base::func()).
+
+
+**Namelookup** bir kez yapılır bulunması ile sona erer. Türetilmiş sınıflarda ilk olarak isim arama, kullanılan sınıfın içinde bulunmazsa base sınıf içerisinde aranır.
+
+```C++
+void foo(int,int);
+class Base {
+public:
+    void foo(int);
+};
+class Der: public Base {
+    void foo();
+public:
+void func() {
+    foo();
+    Base::foo(12);
+    ::foo(12,13);
+}
+};
+```
+Der'deki `func()` fonksiyonu içerisinde isim arama şu şekilde gerçekleşir. İlk olarak fonksiyon Der sınıfı içerisinde aranır bulunmazsa global'de değil Base içerisinde daha sonra globalde aranır.
+
+Arama sırası şu şekildedir;
+1. Namelookup
+2. Context Control
+3. Access Control
+
+* Türemiş sınıf türünden taban sınıf türüne yapılan dönüşüm upcasting(yukarı doğru dönüşüm) denir.
+
+* Taban sınıfı türünden bir nesneye, türemiş sınıfından bir nesneye atanmaması ve kopyalanmaması gerekir bu `object slicing` denir.
+
+* Her türemiş sınıf nesnesi hayata geldiğinde onun içinde yer alan taban nesnesi hayata gelir. 
+
+C++'da  kalıtım nesne yönelimli programlamadaki kalıtımı kapsamakla birlikte bunun dışında farklı amaçlarlada kullanılıyor.
+
+> Incomplete type ile kalıtım oluşturulmaz.
+
+3 ayrı kalıtım vardır.
+- public
+- private
+- protected
+
+Türemiş sınıfın constructor'unda eğer biz constructor initializer list ile yazmazsak derleyici her zaman taban sınıfın default ctor'una çağrı yapacak şekilde kod üretecektir.
+
+    Constructor initializer list ile;
+        İlk taban sınıf alt nesnesi
+            Daha sonra bildirimdeki sırayla
+            : elemanlar için ctor çağrılacaktır.
+        
+Türemiş sınıftan, taban sınıfa doğru otomatik dönüşüm vardır.
+
+#### Kalıtımda özel üye fonksiyonlar
+
+__Default Constructor__
+
+Derleyici taban sınıfın default constructor'una çağrı yapacak şekilde kod üretir.
+
+Eğer bu çağrı;
+
+a) Base'in default constructor'u olmaması
+
+b) Base'in default constructor'u olması fakat private, çağrılamayacak statüde olması
+
+c) Base'in default constructor'u olması fakat delete edilmiş olması 
+
+durumlarında ise derleyici default constructor'u `delete` eder.
+
+
+__Copy Constructor__
+
+```C++
+Der(const Der& other) : Base(other) {}
+```
+
+
+__Move Constructor__
+
+```C++
+Der(Der&& other) : Base(std::move(other)) {}
+```
+
+
+__Copy Assignment__
+
+```C++
+Der& operator=(const Der& other) {
+    Base::operator=(other);
+    return *this;
+}
+```
+
+
+__Move Assignment__
+
+```C++
+Der& operator=(Der&& other) {
+    Base::operator=(std::move(other));
+    return *this;
+}
+```
+
+**Taban Sınıfın Üye Fonksiyonu**
+
+1. Türemiş sınıflara hem bir arayüz(interface) hem de implementasyon verebilir.
+
+1. Türemiş sınıflara hem bir arayüz hem de default implementasyon verebilir(virtual).
+
+1. Türemiş sınıflara bir arayüz vermez ancak implementasyon verebilir(pure virtual).
+
+```C++
+class Airplane {
+public:
+    void takeof();           //1. durum
+    virtual void fly();      //2. durum
+    virtual void land() = 0; //3. durum
+};
+```
+
+Eğer bir sınıf en az bir 'virtual' fonksiyon(2. ve 3. durum) içeriyorsa böyle sınıflara ve böyle sınıflardan kalıtım yoluyla oluşturulan sınıflara `polymorphic class(çok biçimli sınıf)` denir.
+
+Eğer en az bir 'pure virtual' fonksiyonu(3. durum) varsa böyle sınıflara `abstract class(soyut sınıf)` denir.
+
+> Abstract sınıflardan nesne oluşturulmaz.
+
+#### Virtual Dispatch(Sanal Gönderim)
+
+Bir fonksiyon çağrısı
+
+- static binding ~ early binding (compile time)
+
+- dynamic binding ~ late binding
+
+olmak üzere iki farklı ele alınır. Python bir dyanmic binding proglama dilidir. Yani tür run time'da çıkarılır. C, C++, C#... gibi diller ise static binding'tir. C++ aynı zamanda dynamic binding mekanizmasına sahiptir(RTTI).
+
+C++11 ile dile
+
+- override 
+- final
+
+olmak üzere 2 adet contextual keyword(bağlamsal anahtar sözcük) eklendi.
+
+__Contextual Keyword:__ Belirli bir bağlamda kullanıldığı zaman anahtar sözcük etkisi yaparken o bağlamın dışında kullanıldığı zaman ise identifier olarak kullanılabilir.
+
+
+> Türemiş sınıfın, taban sınıfın bir sanal fonksiyonu ile aynı imzaya sahip ancak geri dönüş değeri türü farklı bir fonksiyon bildirilmesi sentaks hatasıdır.
+
+#### Object Slicing(Nesne Dilinlenmesi)
+
+Eğer bir sanal fonksiyona yapılan çağrı taban sınıf pointer'ı veya referansı ile yapılıyorsa sanal gönderim mekanizması devreye girer. Fakat çağrı taban sınıf nesnesi ile yapılıyorsa sanal gönderim mekanizmaı devreye girmez ve buna `object slicing` denir(Derleyici bu işlevi derleme zamanında taban sınıf fonksiyonuna bağlar).
+
+![](images/virtual_key.png)
+
+> Bir taban sınıfın üye fonksiyonunu türetilmiş sınıfın private bölümünde oluşturabiliriz.
+
+**NVI(Non-Virtual Idiom):** Taban sınıfın sanal üye fonksiyonlarını private alanda tanımlamaya denir.
+
+Sanal Gönderimin(Virtual Dispatch) devreye girmediği durumlar;
+
+- Taban sınıfın ctor'u içinde yapılan sanal fonksiyon çağrıları sanal gönderime tabi tutalmaz.
+
 

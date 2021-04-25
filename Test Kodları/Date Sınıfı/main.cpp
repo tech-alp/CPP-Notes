@@ -91,15 +91,16 @@ void test_weekday() {
 
 int main()
 {
-    
-    std::cout << "**************** Test Increment Decrement ****************\n\n";
-    test_operator_increment_decrement();
-    std::cout << "\n************** Test Random Date *****************\n\n";
-    //test_randomDate();
-    std::cout << "\n************** Test Compare Date *****************\n\n";
-    test_compare_operator();
-    std::cout << "\n************** Test Difference Date *****************\n\n";
-    test_difference_between_dates();
-    std::cout << "\n************** Test Week Day *****************\n\n";
-    test_weekday();
+    Date date = "18-05-1997";
+    std::cout << date << '\n';
+    // std::cout << "**************** Test Increment Decrement ****************\n\n";
+    // test_operator_increment_decrement();
+    // std::cout << "\n************** Test Random Date *****************\n\n";
+    // //test_randomDate();
+    // std::cout << "\n************** Test Compare Date *****************\n\n";
+    // test_compare_operator();
+    // std::cout << "\n************** Test Difference Date *****************\n\n";
+    // test_difference_between_dates();
+    // std::cout << "\n************** Test Week Day *****************\n\n";
+    // test_weekday();
 }
