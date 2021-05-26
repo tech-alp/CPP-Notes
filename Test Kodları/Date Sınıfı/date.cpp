@@ -11,21 +11,23 @@ static int pmonthDays[][13] = {{0,31,28,31,30,31,30,31,31,30,31,30,31},
 {0,31,29,31,30,31,30,31,31,30,31,30,31}};
 
 
-static bool isValidDate(int day, int month, int year) {
-    int x = Date::isleap(year) ? 1 : 0;
-    if(day<1||day>pmonthDays[x][month]) {
-        std::cerr << "Day is not correct number\n";
-        return false;
-    }
-    else if(month < 1 || month > 12) {
-        std::cerr << "Month is not correct number\n";
-        return false;
-    }
-    else if(year < Date::year_base) {
-        std::cerr << "Year is not correct number\n";
-        return false;
-    }
-    return true;
+constexpr bool Date::is_valid(int day, int month, int year) {
+    // int x = Date::isleap(year) ? 1 : 0;
+    // if(day<1||day>pmonthDays[x][month]) {
+    //     std::cerr << "Day is not correct number\n";
+    //     return false;
+    // }
+    // else if(month < 1 || month > 12) {
+    //     std::cerr << "Month is not correct number\n";
+    //     return false;
+    // }
+    // else if(year < Date::year_base) {
+    //     std::cerr << "Year is not correct number\n";
+    //     return false;
+    // }
+    // return true;
+    return year > Date::year_base ? ((day >= 1 && day <= pmonthDays[(int)isleap(year)][month]) ?
+        (month >= 1 && month <= 12) : false) : false;
 }
 
 Date::Date(): Date(1,1,1900) //Delegating ctor
@@ -35,7 +37,7 @@ Date::Date(): Date(1,1,1900) //Delegating ctor
 
 Date::Date(int d, int m, int y) : md(d), mm(m), my(y)
 {
-    if(isValidDate(md,mm,my)) {
+    if(is_valid(md,mm,my)) {
         exit(EXIT_FAILURE);
     };
 }
@@ -162,10 +164,13 @@ Date& Date::set_year(int year)
 
 Date& Date::set(int day, int mon, int year)
 {
-    set_month_day(day);
-    set_month(mon);
-    set_year(year);
-    return *this;
+    if(is_valid(day,mon,year)) {
+        md = day;
+        mm = mon;
+        my = year;
+        return *this;
+    }
+    //throw bad_date{};
 }
 
 Date Date::operator-(int day) const

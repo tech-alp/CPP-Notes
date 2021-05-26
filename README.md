@@ -247,7 +247,6 @@ olarak tanımlanır.
 
 ---
 
-
 ## Function Overloading
 
 Aynı isimli işlevler aynı kapsamda(scope) olmalıdır.
@@ -954,77 +953,64 @@ private:
 	size_t mlen;
 public:
     Name() : mlen(0), mp(nullptr) {}
-	Name(const char *p) : mlen{std::strlen(p) }
-	{
-			mp = static_cast<char*>(std::malloc(mlen + 1));
-			if (!mp) {
-				std::cerr << "bellek yetersiz !\n";
-				std::exit(EXIT_FAILURE);
-			}
-			std::strcpy(mp, p);
+    ~Name() {
+        // free edilen kaynağı tekrar free etme!
+		if(mp)
+			free(mp);
+	}
+	Name(const char *p) : mlen{std::strlen(p) } {
+		mp = static_cast<char*>(std::malloc(mlen + 1));
+		if (!mp) {
+			std::cerr << "bellek yetersiz !\n";
+			std::exit(EXIT_FAILURE);
+		}
+		std::strcpy(mp, p);
 	}
 
-	Name(const Name &other) : mlen(other.mlen)
-	{
-			mp = static_cast<char*>(std::malloc(mlen + 1));
-			if (!mp) {
-				std::cerr << "bellek yetersiz !\n";
-				std::exit(EXIT_FAILURE);
-			}
-			std::strcpy(mp, p);
+	Name(const Name &other) : mlen(other.mlen) {
+		mp = static_cast<char*>(std::malloc(mlen + 1));
+		if (!mp) {
+			std::cerr << "bellek yetersiz !\n";
+			std::exit(EXIT_FAILURE);
+		}
+		std::strcpy(mp, other.mp);
 	}
 
-	Name(Name &&r) : mlen{r.mlen}, mp {r.mp} //
-	{
+	Name(Name &&r) : mlen{r.mlen}, mp {r.mp} {
 		r.mp = nullptr;
 	}
 
-	Name &operator=(Name &&r)
-	{
-			if (this == &r) //self-assignment kontrolü
-			{
-				return *this;				
-			}
-			free(mp);
-			mp = r.mp;
-			mlen = r.mlen;
-			r.mp = nullptr;
+	Name &operator=(Name &&r) {
+	    if (this == &r) //self-assignment kontrolü
 			return *this;
+
+		free(mp);
+		mp = r.mp;
+		mlen = r.mlen;
+		r.mp = nullptr;
+		return *this;
 	}
 
-	Name &operator=(const Name &r)
-	{
+	Name &operator=(const Name &r) {
 		if (this == &r)
-				return *this;
+			return *this;
 
 		mlen = r.mlen;
 		free(mp);
 		
 		mp = static_cast<char*>(std::malloc(mlen + 1));
 		if (!mp) {
-				std::cerr << "bellek yetersiz !\n";
-				std::exit(EXIT_FAILURE);
+			std::cerr << "bellek yetersiz !\n";
+			std::exit(EXIT_FAILURE);
 		}
-		std::strcpy(mp, p);
+		std::strcpy(mp, r.mp);
 	}
 
-	void print()const
-	{
+	void print()const {
 		std::cout << "(" << mp << ")\n";
 	}
 
-	size_t length() const
-	{
-		return mlen;
-	}
-	~Name()
-	{
-        // free edilen kaynağı tekrar free etme!
-		if(mp)
-		{
-			free(mp);
-		}
-	}
+	size_t length() const { return mlen; }
 };
 ```
 
@@ -1396,7 +1382,8 @@ Myclass func() {
 int main() {
     Myclass mx = func();
     // Release modda sadece ctor çağrılır.
-    // Fakat normalde func'ın içerisinde ctor geri dönüş değerinde ise move ctor çağrılması gerekirdi.
+    // Fakat normalde func'ın içerisinde m nesnesi hayata gelir ve fonksiyondan çıktığında 
+    // hayati biter geri dönüş değerinde ise move ctor çağrılması gerekirdi.
 }
 ```
 
@@ -1558,6 +1545,8 @@ Meyer's Singleton Class
 ```Cpp
 class Myclass {
 public:
+    Myclass(const Myclass&) = delete;
+    Myclass& operator=(const Myclass&) = delete;
     static Myclass& get_instance() {
         static Myclass singleton;
         return singleton;
@@ -1684,7 +1673,7 @@ private:
     class Implementation;
     Implementation* m_imp;
 };
-
+//------------------------------
 //myclass.cpp
 #include "A.h"
 #include "B.h"
@@ -1790,7 +1779,7 @@ private:
 };
 ```
 
-Bu şekilde kod tekrarı yapmadık fakat üye değişkenleride ilk değer olarak başlatmış olmadık. Atama ile değişkenleri oluşturduk. İşte tam da bu noktada delegating contructor bu sorunu çözmemizi sağlıyor.
+Bu şekilde kod tekrarı yapmadık fakat üye değişkenleride ilk değer olarak başlatmışta olmadık. Atama ile değişkenleri oluşturduk. İşte tam da bu noktada delegating contructor bu sorunu çözmemizi sağlıyor.
 
 ```Cpp
 class Myclass {
@@ -1895,6 +1884,7 @@ ali::veli::y = 13;
 > Asla başlık dosyalarında using bildirimi veya using namespace bildirimi yapmayın.
 
 Eğer aynı isim alanı birden fazla kullanılırsa, derleyici bu isim alanları içerisindeki ifadeleri birleştirir. Bu kütüphaneleri farklı başlık dosyalarına ayrımak için oldukça faydalıdır. Örneğin statndart kütüphanede vector, string, array, bitset, map vb. gibi bir çok kütüphane `std namespace` isim alanı içerisindedir.
+
 ```Cpp
 namespace enes {
     int x,y;
@@ -1924,6 +1914,7 @@ bu şekilde kullanmak yerine;
 namespace A::B::C {
 }
 ```
+
 Modern C++ ile yanyana yazılabiliyor.
 
 İsimlerin nitelenmeden kullanabilmek için;
@@ -1939,7 +1930,7 @@ bu 3'ünden biri olması gerekmektedir.
 
 #### Using Decleration
 
-Sunig bildiriminin bir spoce'u var ve bildirilen ismi o scope içerisine enjekte ediyor.
+Using bildiriminin bir spoce'u var ve bildirilen ismi o scope içerisine enjekte ediyor.
 
 > Using bildirimi kullanılacaksa en dar scope'da kullanılmalı, eğer kullanılan kapsam yeterli değilse bir üst scope'da o da yeterli değil ise en son global düzeyde yapılmalı.
 
@@ -2024,6 +2015,7 @@ int main() {
 ```
 
 Programlamaya ilk giriş kodlarında sıklıkla kullanılan Hello World programında ADL var mıdır?
+
 ```Cpp
 int main(){
     std::cout << "Hello World";
@@ -2181,6 +2173,7 @@ Sequence Containers | Associative Containers | Unordered Associative Containers 
 | array | - | - |
 | __string__ | - | - |
 -->
+
 ## Inheritance
 
 Aynı arayüzü destekleyen farklı sınıfların aynı türdenmiş gibi kullanılabilmesini sağlayan ve eskiden yazılmış kodları daha sonra yazılacak kodların kullanmasını sağlayan bir mekanizmadır.
@@ -2195,6 +2188,18 @@ C++'da kalıtım
 
 olmak üzere 3 farklı şekilde yapılabilir.
 
+```C++
+class Base {
+	//...
+};
+
+class A : public Base { }; //public inheritance
+class B : private Base { }; //private inheritance
+class C : protected Base { }; //protected inheritance
+class D : Base { }; //private inheritance
+struct E : Base { }; //public inheritance
+```
+
 Kalıtım tıpkı composition'da olduğu gibi bir sınıf nesnesinin içinde fiziksel olarak başka bir sınıf nesnesi vardır. Ancak composition'da bu içerilen nesneye `member object` denilir. Kalıtımda ise içerilen nesne `base class object` denilir.
 
 ![](images/inheritance-2.png)
@@ -2204,16 +2209,18 @@ Her `der` nesnesi içerisinde bir `base` nesnesi vardır.
 ```C++
 class Base {
 public:
-    void func();
+	void func(int) {}
 };
 class Der : public Base {
 public:
-    void func(int);
+	void func() {}
 };
-int main() {
-    Der myder;
-    myder.func(); //Sentaks hatası
-    myder.Base::func(); // Geçerli
+int main()
+{
+	Der myder;
+	myder.func(); //gecerli
+	//myder.func(10); //gecersiz
+	myder.Base::func(10); //gecerli
 }
 ```
 
@@ -2247,7 +2254,7 @@ Arama sırası şu şekildedir;
 
 * Türemiş sınıf türünden taban sınıf türüne yapılan dönüşüm upcasting(yukarı doğru dönüşüm) denir.
 
-* Taban sınıfı türünden bir nesneye, türemiş sınıfından bir nesneye atanmaması ve kopyalanmaması gerekir bu `object slicing` denir.
+* Taban sınıfı türünden bir nesneye, türemiş sınıfından bir nesneye atanmaması ve kopyalanmaması gerekir. Akis halde [object slicing](#Object-Slicing(Nesne-Dilinlenmesi)) meydana gelir.
 
 * Her türemiş sınıf nesnesi hayata geldiğinde onun içinde yer alan taban nesnesi hayata gelir. 
 
@@ -2284,6 +2291,36 @@ b) Base'in default constructor'u olması fakat private, çağrılamayacak statü
 c) Base'in default constructor'u olması fakat delete edilmiş olması 
 
 durumlarında ise derleyici default constructor'u `delete` eder.
+
+```C++
+class Base {
+public:
+	Base() {
+		std::cout << "Base default ctor\n";
+	}
+	~Base() {
+		std::cout << "Base destructor\n";
+	}
+};
+
+class Der : public Base {
+public:
+	Der() {
+		std::cout << "Der default ctor\n";
+	}
+	~Der() {
+		std::cout << "Der destructor\n";
+	}
+};
+
+int main()
+{
+	Der myder;
+}
+// Output
+// Base default ctor
+// Der default ctor
+```
 
 
 __Copy Constructor__
@@ -2372,10 +2409,444 @@ Eğer bir sanal fonksiyona yapılan çağrı taban sınıf pointer'ı veya refer
 
 > Bir taban sınıfın üye fonksiyonunu türetilmiş sınıfın private bölümünde oluşturabiliriz.
 
-**NVI(Non-Virtual Idiom):** Taban sınıfın sanal üye fonksiyonlarını private alanda tanımlamaya denir.
+**NVI(Non-Virtual Ineterface Idiom)(Sanal Olmayan Arayüz):** Bu idiyom bir taban sınıfın sanal işlevlerinin public olması yerine private ya da protected yapılmasına, taban sınıfın tüm public arayüzünün sanal olmayan işlevler ile oluşturulmasına dayanıyor. Eğer taban sınıfın bir sanal işlevi türemiş sınıflar tarafından çağrılmayacaksa sınıfın private öğesi, türemiş sınıflar tarafından çağrılacak ise sınıfın protected öğesi yapılıyor. Sınıfın public arayüzünde yalnızca sanal olmayan işlevler bulunuyor.
 
 Sanal Gönderimin(Virtual Dispatch) devreye girmediği durumlar;
 
 - Taban sınıfın ctor'u içinde yapılan sanal fonksiyon çağrıları sanal gönderime tabi tutalmaz.
 
 
+**Sanal Fonksiyonlar Nasıl İmplemente Edilir?**
+
+![](images/inheritance-3.png)
+
+Bir Car sınıfımız olsun ve bu Car sınıfından Bmw, Fiat, Volvo sınıflarını kalıtım ile oluşturalım.
+```C++
+class Car {
+public:
+    virtual void start() = 0;
+    virtual void run() = 0;
+    virtual void stop() = 0;
+};
+```
+
+//Açıklama eklenecek.
+
+Sanal fonksiyonların oluşturulmasıyla ekstra maliyet olur mu?
+
+1. İşlemci maliyeti
+
+2. Bellek maliyeti
+
+
+#### Virtual Constructor
+
+C++ dilinde bir sınıfın constructor'u virtual anahtar sözcüğü ile bildirilemez.
+
+Ancak genel olarak nesne yönelimli programlamada bir sanal constructor ihtiyacı söz konusudur.
+
+#### Clone Idiom
+
+Bir nesnenin türünü programın çalışma zamanında belirlemesini istiyoruz.
+
+Run time'da Car* tipinde parametre alan fakat gönderilen sınıf nesnesinin Car'dan türetilmiş bir sınıf olduğunu fakat hangi tür olduğunu öğrenmek istediğimiz zaman kullanılacak bir idiom'dır.
+
+```C++
+void car_game(Car* p) {
+    p->start();
+    Car* pnew = p->clone();
+    pnew->start();
+}
+```
+
+#### Virtual Deconstructor
+
+Eğer base'in deconstructor'u virtual olmaz ise türemiş sınıf nesnesinin dinamik olarak oluşturup bunun adresini taban sınıf pointer'ına atarsak(upcasting)
+```C++
+Base* baseptr = new Der;
+```
+fakat nesnenin görevi bitip delete edilirse, çağrılan sadece base'ın deconstructor'u olacaktır. Der'in deconstructor'u çağrılmayacak kaynaklar geri verilmeyecektir.
+
+Bir diğer problem ise new ile oluşturulan türemiş sınıf nesnesi bellekte yer ediniyor daha sonra delete ederken önce base'in deconstructor'u daha sonra C'deki free gibi olan operator delete() fonksiyonuna operator new ile elde edilen bellekteki adressi gönderiyor. Böylece o bellek alanı geri verilmiş oluyor. `delete baseptr;` taban sınıf pointeri ile taban sınıf pointerini delete operatorunun operandı yaparsanız derleyici operator delete fonksiyonuna taban sınıf nesnesinin adresinini geçecek. New operatörü geri dönüş değeri olarak oluşturulan nesnenin adresini döndürür. `baseptr` bu adresi gösterir fakat delete edilirken baseptr sınıf adresi ile türemiş sınıf adresi ancak aynı yeri gösterirse doğru sonuç olur. Bu da bir zorunluluk olmadığı için `tanımsız davranışa` sebep olacaktır.
+
+Eğer türemiş sınıf nesnesini bir taban sınıf pointeri ile işlemek gibi bir niyetimiz yoksa orta da bir problem yok fakat eğer böyle bir durum söz konusu ise her zaman taban sınıf deconstructor'unu protected yapın ki yanlışlıkla client bir dinamik türemiş sınıf nesnesini taban sınıf pointerı ile yönetmeye kalkarsa setaks hatası olsun.
+
+```C++
+class Base {
+public:
+    Base() {}
+protected:
+    virtual ~Base() {}
+};
+Base* baseptr = new Der;
+delete baseptr; //Sentaks hatası base deconstructor protected
+```
+Sonuç olarak;
+
+Taban sınıfların deconstructor'u ya public virtual olacak
+ya da protected non-virtual olacaktır.
+
+
+> Gloabal fonksiyonlar ve sınıfın statik üye fonksiyonları sanal olamaz.
+
+#### Variant Return Type(Covariance)
+
+Eğer taban sınıfın sanal fonksiyonlarının geri dönüş değeri türü Base* ise türemiş sınıf bu fonksiyonları override ederken geri dönüş değerini Base* yerine Der* yapabilir(eğer Der Base'in türemiş sınıfı ise).
+
+Sadece taban sınıf türünden pointer veya referansı ise geçerlidir.
+
+```C++
+class Base {
+public:
+    virtual Base* func1();
+    virtual Base& func2();
+    virtual Base func3();
+};
+
+class Der : public Base {
+public:
+    virtual Der* func1() override; //Geçerli
+    virtual Der& func2() override; //Geçerli
+    virtual Der func3() override; //Geçerli
+    //virtual Der func3() override;  //Geçersiz
+};
+```
+
+Bu şekilde kullanımı kod yazımını kolaylaştırmaktadır.
+
+#### Sınıf İçi Using Bildirimi
+
+```C++
+class Base {
+public:
+    void func(int x) {
+        cout << "Base::func(int x) x = " << x << '\n';
+    }
+};
+class Der : public Base {
+public:
+    void func(double x) {
+        cout << "Der::func(double x) x = " << x << '\n';
+    }
+};
+int main() {
+    Der myder;
+    myder.func(13);  // Der::func(double x)
+    myder.func(.13); // Der::func(double x)
+}
+```
+
+Görüldüğü üzere namelookup ile Der sınıfı içerisindeki `func()` fonksiyonu çağrılır. Fakat biz int olan parametrenin base'in içindeki `func()` fonksiyonu çağırmak istersek;
+
+ya Der içersinde `func()` fonksiyonunu overload ederiz.
+```C++
+void func(int x) {
+    Base::func(x);
+}
+```
+Bu şekilde bir fonksiyon overloading ile oluşturacağız.
+Ya da daha iyi bir yöntem, sınıf içinde using anahtar sözcüğü ile bir bildirim yaparsak taban sınıftaki ismin doğrudan türemiş sınıf içinde bilinmesini(visible olmasını) sağlayabiliriz. Yani taban sınıftaki ismi türemiş sınıfın scope'ına enjekte edebiliriz.
+
+```C++
+class Der : public Base {
+public:
+    using Base::func();
+    void func(double x) {
+        cout << "Der::func(double x) x = " << x << '\n';
+    }
+};
+```
+
+Bir diğer örnek,
+
+```C++
+class Base {
+public:
+    Base(int);
+    Base(int,int);
+    Base(double,double);
+};
+class Der : public Base {
+public:
+    using Base::Base;
+};
+int main() {
+    Der myder1(13);
+    Der myder1(13,14);
+    Der myder1(1.3,.45);
+}
+```
+Der sınıfı içersinde constructor oluşturmamıza rağmen derleyici using bildirimi ile bunu bizim için gerçekleştirdi.
+
+Fakat Base'in constructor'ları protected yapılması durumunda sentaks hatası olur. Sınıfın üye fonksiyonlarının pretected olarak ifade edilmesine `inhereted constructor` denir. //Açıklamayı kontrol et
+
+#### Final Keyword
+Tıpkı override anahtar sözcüğünde olduğu gibi bu da bir contextual keyword'tür.
+
+İki ayrı anlamda kullanılır.
+
+- final class
+- final override
+
+__final class__ 
+
+```C++
+class Base {};
+class Der final : public Base {};
+class SDer : public Der {}; // sentaks hatası Der final'dır
+```
+
+__final override__
+```C++
+class Base {
+public:
+    virtual void func();
+};
+class Der : public Base {
+public:
+    void func() final override();
+};
+```
+
+Eğer bir override ettiğimiz fonksiyon sizden kalıtım yolu ile elde edilecek sınıflar tarafından override edilmesini istemiyorsanız `final` bağlamsal anahtar sözcüğünü kullanmalısınız.
+
+#### Private Inheritance
+
+Private kalıtımı eleman(containment) olarak composition'a bir alternatif olarak kullanılır.
+
+```Cpp
+class A {
+public:
+    void fa();
+private:
+    void print();
+};
+
+class B {
+A ax;
+public:
+    void fa() {
+        ax.fa();
+    }
+    void foo() {
+        //ax.print(); //geçersiz access control hatası
+    }
+};
+```
+
+Bu örnekte sırasıyla;
+
+- A sınıfın public interface'i B'ye eklenmedi.
+- B sınıfın public interface'ini seçerek B'ye ekleyebiliriz.
+- B sınıfı A sınıfının private bölümüne erişemez.
+
+
+```Cpp
+class  B : private A {} // private
+class  B : A {}         // private
+struct B : A {}         // public
+```
+
+- private kalıtımı aslında içerme yoluyla(containment) composition'a bir alternatiftir. Ancak containment her zaman kalıtıma göre çok daha az bir bağımlılık sağlar.
+
+Hangi durumlarda private kalıtımı yapılır?
+
+1. elemanın sanal fonksiyonunu override etmeniz gerekiyorsa
+1. elemanın protected bölümüne erişmeniz gerekiyorsa
+1. eleman taban sınıf türüne otomatik dönüşüm olması gerekiyorsa
+
+> private kalıtımında is-a ilişkisi yoktur. Base dönüşüm otomatik olmaz.
+
+#### Restricted Polymorphism
+
+Belirli fonksiyonların polymorphism'den faydanlamasını istiyebiliriz. Bunun için türetilmiş sınıfı private kalıtımı yapıyoruz. Virtual dispatch mekanizmasından yaralanmasını istediğimiz global fonksiyona friendlik veriyoruz.
+
+```Cpp
+class Base {
+public:
+    virtual void vfunc();
+};
+class Der : private Base {
+public:
+    void vfunc() override;
+    friend void foo();
+};
+void foo();
+```
+
+#### Protected Kalıtımı
+
+Private kalıtımı ile arasındaki tek fark taban sınıfın protected fonksiyonlarına erişmesini istiyorsak istiyorsak o zaman protected kalıtımı tercih edilir.
+
+```Cpp
+class Base {
+public:
+    void f1();
+    void f2();
+};
+class Der : protected Base {
+    void fder() {
+        void f1();
+        void f2();
+    }
+};
+class Myder : public Der {
+public:
+    void myder() {
+        void f1(); //Geçerli fakat Der Base'den private kalıtımı yapsaydı hatalı olacaktı
+    }
+}
+```
+
+### Multiple Inheritance
+
+![](images/multi-inheritance_1.png)
+
+```Cpp
+class BaseX {
+public:
+    void func1();
+    void func2();
+};
+class BaseY {
+public:
+    void foo1();
+    void foo2();
+};
+class Der : public BaseX, public BaseY {};
+```
+> Eğer çoklu kalıtım `class Der : public BaseX, BaseY {};` şeklinde yapılsaydı `BaseY` private kalıtımı olmuş olacaktı. Yani virgülle ayrılmış olması aynı aynı kalıtımı yapacağı anlamı taşımamaktatır.
+
+#### Çoklu Kalıtımda İsim Arama
+
+```Cpp
+class A {
+public:
+    void func(int);
+};
+class B {
+public:
+    void func(double);
+};
+class C : public A, public B {};
+int main() {
+    C cx;
+    cx.func(13.5); //Sentaks hatası(ambiguity)
+}
+```
+
+Çoklu kalıtımda isim arama söz konusu olduğunda `.` operatörünün sağındaki isim ilk olarak türemiş sınıfın scopunda aranır eğer bulunmazsa taban sınıfları içeriside belirli bir sıraya göre aranmıyor `aynı şekilde` aranıyor yani sanki bunlar tek bir scope içerisindeymiş gibi yorumlanıyor fakat scopeları farklı olduğundan dolayı eğer aynı isim kullanılıyorsa function overloading olamayacak `ambiguity` olacaktır. Böyle bir durumda eğer ismi niteleyerek çağrı yaparsak(`cx.B::func(13.5)`) hata olmayacaktır.
+
+### Diamond Formation(Karo/Elmas Formasyonu)
+
+Bir diğer ismi DDD(Dreaful Diamond of Derivation) olarakta bilinir.
+
+![](images/DDD.png)
+
+Bu formasyonda 2 tane problemler var.
+
+1. Der1 ve Der2'den gelen 2 adet Base nesnesi olacaktır.
+
+![](images/DDD_1.png)
+
+```Cpp
+class Base {};
+class Der1 : public Base {};
+class Der2 : public Base {};
+class MDer : public Der1, public Der2 {};
+```
+
+> Diamond formasyonu sadece compile time'a dayalı bir problem değil run time'a yönelikte bir problemi vardır.
+
+2. Modele göre 1 tane taban nesnesi olması gerektiğinden fakat iki tane dolaylı taban nesnesi olduğundan run time'a yönelikte probleme yol açar. 1. türetilmiş sınıf içerisindeki taban nesnesi değiştirildiğinde 2. türetilen sınıf nesnesininde değişmesi gerektiğinden fakat değişmemesinden sorun olur. Taban sınıf nesnesi 1 tane olmalı bunun için de `virtual inheritace` kullanılır.
+
+#### Virtual Inherintance
+
+Eğer iki sınıftan çoklu kalıtım ile 1 sınıf elde edecekseniz. Elde edilen sınıfların taban sınıflarının 1 tane olmasını istediğiniz zaman virtual inherirance kullanılır.
+
+```Cpp
+class Device {
+public:
+  virtual void turn_on() {
+    _is_on = true;
+    cout << "Cihaz acildi\n";
+  }
+  virtual void turn_off() {
+    _is_on = false;
+    cout << "Cihaz kapatildi\n";
+  }
+  void run() {
+    if(is_on()) {
+      start();
+    } else {
+      cout << "cihaz kapali\n";
+    }
+  }
+  bool is_on()const { return _is_on; }
+protected:
+  bool _is_on;
+  virtual void start() = 0;
+};
+
+class Fax : virtual public Device {
+public:
+  void send_fax(){
+    if(!is_on()) {
+      cout << "cihaz kapali oldugundan gonderilmedi\n";
+    }else {
+      cout << "fax gonderildi\n";
+    }
+  }
+  void receive_fax() {
+    if(!is_on()) {
+      cout << "cihaz kapali oldugundan gonderilmedi\n";
+    }else {
+      cout << "fax alindi\n";
+    }
+  }
+private:
+  void start()  override {
+    cout << "Fax calistirildi\n";
+  }
+};
+
+class Modem : virtual public Device {
+public:
+  void send_data() {
+    if(!is_on()) {
+      cout << "cihaz kapali oldugundan gonderilmedi\n";
+    }else {
+      cout << "data gonderildi\n";
+    }
+  }
+  void receive_data() {
+    if(!is_on()) {
+      cout << "cihaz kapali oldugundan gonderilmedi\n";
+    }else {
+      cout << "data alindi\n";
+    }
+  }
+private:
+  void start() override {
+    cout << "Modem calistirildi\n";
+  }
+};
+
+class FaxModem : public Fax, public Modem {
+private:
+  void start() override {
+    cout << "FaxModem calistirildi\n";
+  }
+};
+int main() {
+  FaxModem fm;
+  fm.turn_on();
+  fm.run();
+  fm.send_fax();
+  fm.send_data();
+  fm.turn_off();
+}
+```
+
+
+## Exception Handling
