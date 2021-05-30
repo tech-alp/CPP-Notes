@@ -1,13 +1,14 @@
+#include "date.h"
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <ostream>
+#include <istream>
 #include <iomanip>
 #include <random>
 
-#include "date.h"
-
 constexpr static const char delimeter = ' ';
-static int pmonthDays[][13] = {{0,31,28,31,30,31,30,31,31,30,31,30,31},
+constexpr static int pmonthDays[][13] = {{0,31,28,31,30,31,30,31,31,30,31,30,31},
 {0,31,29,31,30,31,30,31,31,30,31,30,31}};
 
 
@@ -93,8 +94,8 @@ int Date::get_year_day() const
 Date::WeekDay Date::get_week_day() const
 {
     //Doomsday Rule implementation
-    static const int doomsdayArrayLeapYear[] = {0,4,1,7,4,2,6,4,1,5,3,7,5};
-    static const int doomsdayArrayNotLeapYear[] = {0,3,7,7,4,2,6,4,1,5,3,7,5};
+    static constexpr int doomsdayArrayLeapYear[] = {0,4,1,7,4,2,6,4,1,5,3,7,5};
+    static constexpr int doomsdayArrayNotLeapYear[] = {0,3,7,7,4,2,6,4,1,5,3,7,5};
 
     int year2Digits = my - ((int)(my / 100))*100;
     int calc1 = year2Digits/12;
@@ -250,22 +251,15 @@ constexpr bool Date::isleap(int year)
     return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
 }
 
-std::ostream &operator<<(std::ostream &os, const Date &date)
+std::ostream& operator<<(std::ostream &os, const Date &date)
 {
+    using namespace std;
     static const char* const pdays[] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
-    char prev;
-    if(date.get_month_day() < 10) {
-        prev = os.fill('0');
-        os << os.fill(prev);
-    }
-    os << date.get_month_day() << delimeter;
-
-    if(date.get_month() < 10) {
-        prev = os.fill('0');
-        os << os.fill(prev);
-    }
-    return os << date.get_month() << delimeter << date.get_year() << delimeter
-              << pdays[static_cast<int>(date.get_week_day())];
+    
+    ostringstream ossr;
+    ossr << setfill('0') << setw(2) << date.md;
+    ossr << setfill(' ') << left;
+    ossr << " " << pmonthDays[date.mm] << " " << date.my << " " << pdays[static_cast<int>(date.get_week_day())];
 }
 
 Date Date::random_date() {
