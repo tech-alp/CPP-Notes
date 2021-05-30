@@ -2850,3 +2850,219 @@ int main() {
 
 
 ## Exception Handling
+
+Programın çalışma zamanında oluşacak hataların yönetilmesidir.
+
+Bir fonksiyon yüklendiği işi yapamayacağını anlarsa(saptarsa) ne yapmalı?
+
+C'de iş gören kod ile hata işleyen kod iç içedir. Buda algoritma ile hata kontrolünün iç içe girmesine sebep olur.
+Bu iki farklı logic yapı okumayı, yazmayı, test etmeyi her şeyi zor duruma sokmaktadır. C++'da bu sıkıntılardan kurtulmak için exception handling mekanizması devreye girmektedir.
+
+Hataya müdahale edecek kod
+1. resumptive(hata yakalanacak fakat program sonlanmadan programın devamını sağlar.)
+2. terminative(program sonlanır.)
+olmak üzere iki şekilde ele alınır.
+
+```Cpp
+try {}
+catch(int x) { /*execption handler*/ }
+```
+
+Eğer bir hata oluşur ve bu oluşan hata yakalanmazsa("uncought exception") program `terminate` fonksiyonunu çağırır ve program sonlandırılır. Buda kayıplara yol açabilir. Bu yüzden her zaman exception yakalanması gerekir.
+
+```Cpp
+typedef void(*terminate_handler)(void);
+//using terminate_handler = void(*)(void);
+
+terminate_handler set_terminate(terminate_handler);
+```
+
+set_terminate' e eğer bir fonksiyon adresini geçerseniz std::terminate fonksiyonu bizim oluşturduğumuz fonksiyonu çağıracaktır.
+
+```Cpp
+void f1() {
+    throw 1;
+}
+void my_terminate() {
+    cout << "terminate cagrildi\n";
+    cout << "my_terminate cagrildi\n";
+    cout << "abort cagrildi\n";
+    abort();
+}
+
+int main() {
+    set_terminate(my_terminate);
+    f1(); // Hata yakalanmadı terminate cağrıldı o da my_terminate'i çağırdı.
+}
+```
+
+Statndart kütüphanenin kendi hata sınıf hiyerarşisi vardır.
+
+![](images/HierarchyofStandartExceptions.png)
+
+> Hataların işlendiği catch bloklarının özelden genele doğru sıralanması bir kodlama paternidir(desen,kalıp). Aksi takdirde alt taraftaki cath'e gelmeden daha genel olan varsa ona girecektir.
+
+Gönderilen hatanın ne olursa olsun yakalanmasını istiyorsanız(catch all) bunun için catch içerisine elipsis(...) atomu koyarak yapabilirsiniz.
+
+```Cpp
+try { }
+catch(...) { /*exception handler*/ }
+```
+
+```Cpp
+void func() {
+    int x = 13;
+    throw x;
+}
+```
+throw ifadesi bir Ivalue expression olsa dahi yukarıya gönderilen nesne x'in kendisi değildir. Böyle olsaydı problem olurdu çünkü x'in hayatı func'ın bitmesiyle sonlanacaktı böylece throw edilen nesne hayatı bitmiş nesne olacaktır. Dolayısıyla hiç bir zaman aslında siz nesne gösteren bir ifade oluştursanız dahi derleyici bu nesnenin kendisini yukarıya gönderecek kod üretmiyor `throw T{x};` şeklindeki gibi derleyici bir geçici nesne oluşturuyor.
+
+
+```Cpp
+class Myclass {
+    void func() {
+        throw Myclass{};
+    }
+}
+```
+Mandatory copy elision ile nesneyi throw ettiği zaman func içerisinde nesne oluşturulmayacaktır. Böylece ilave bir maliyet olmayacaktır.
+
+
+Exception'ı yakaladığımızda ne yapacağız?
+1. Hatayı yakaladım. Gereken işlemleri yaptım ve programı sonlandırdım.
+1. Hatayı yakaladım. Programın devamını sağladım.
+1. Hatayı yakaladım. Kısmi müdahalede bulundum. Yakaladığım hata nesnesini tekrar gönderdim.("aynı" hata nesnesini yeniden göndermeye `rethrow statement` denir.)
+1. Kendi müdahelemi yaptım. Ama beni çağıran kodların(onlara hitap eden) daha yüksek seviyeli exception döndürdüm. Buna `translate` denilmektedir.
+
+```Cpp
+void func() {
+    std::cout << "func cagrildi\n";
+    throw std::out_of_range{"aralik hatasi\n"};
+}
+void foo() {
+    std::cout << "foo cagrildi\n";
+    try {
+        func();
+    }
+    catch(const std::exception& ex) {
+        cout << "hata foo içinde yakalandi:" << ex.what() << "\n";
+        throw; //rethrow statement
+    }
+}
+```
+
+> Exception asenkron bir mekanizma değil senkron bir mekanizmadır. Yani bir thread'ten gönderilen bir hataya başka thread'ten yakalayamayız.
+
+> Eğer program bir hata nesnesi yakalayamadığı için terminate işlevinin çağrılmasıyla sonlanırsa(uncought exception) bu ana kadar oluşturulmuş yerel sınıf nesneleri için destructor çağrılma garantisi yoktur.
+
+Stack unwinding(yığının geri sarımı) yapısı ile eğer hata yakalanırsa bu ana kadar oluşturulmuş yerel sınıf nesnelerinin kaynakları geri verilir.
+
+#### Constructor ve Exception
+
+Eğer bir constructor bir sınıf nesnesini hayata getiremeyeceğini anlarsa bu durumda tek yol exception throw etmektir.
+Fakat sınıfın ctor'u içerisinde exception throw edildiğinde sınıf nesnesi hala hayata gelmediği için destructor çağrılmayacaktır bu yüzden bir kaynak edinimi yapacak olan sınıfın üye elemanları `smart pointer` ile oluşturulması gerekir.
+
+> Dinamik ömürlü nesnelerin ctor'unda exception gönderilmesi durumunda zaten operator new mecbur çağrıldı ama sınıfın destructor'u çağrılmayacak ve operator delete'inde çağrılmayacağını düşünebilirsiniz fakat operator delete çağrılacaktır.
+
+```Cpp
+class Myclass {
+public:
+    Myclass {
+        cout << "ctor\n";
+        throw 1;
+    }
+    ~Myclass {
+        cout << "destructor\n";
+    }
+    char buffer[1024];
+};
+
+void foo() {
+    Myclass* p = new Myclass;
+    delete p;
+}
+
+int main() {
+    try {
+        foo();
+    }
+    catch(int) {
+        ///
+    }
+}
+```
+
+#### Destructor ve Exception
+
+Destructor ya hiç exception throw etmeyecek ya da ederse içinde bunu yakalaması gerekmektedir.
+
+### Exception Safety
+
+- Basic Guarantee
+- Strong Guarantee
+- Nothrow Guarantee
+
+#### Basic Guarentee(Temel Garanti)
+
+- Programın durumu değişebilir.
+- Program tutarlı(devam edebilecek) bir durumda kalacak.
+- Kaynak sızıntısı olmayacak
+- Fonksiyon hiçbir nesneyi geçersiz durumda bırakmayacak.
+
+#### Strong Guarantee(Sıkı Garanti)
+
+- Programın durumu değişmeyecek.
+- commit or rollback
+
+    Ya işinin gör ya da hiçbir şey yapılmamış durumda bırak. İşlev çağrılmadan önce durum nasılsa işlev çağrıldıktan sonrada durum aynı olmalıdır.
+-  Program tutarlı(devam edebilecek) bir durumda kalacak.
+
+#### Nothrow Guarantee(Hata Göndermeme Garantisi)
+
+- Fonksiyon işini yapma garantisi veriyor.
+- Hata gönderilirse kendi yakalayıp işini görecek.
+
+```Cpp
+void func()noexcept; //exception throw etmeyeceğinin garantisini yapar.
+```
+
+noexcept operatoruda vardır vardır ve uneveluated context'tir.
+
+```Cpp
+int foo();
+int main() {
+    auto b = noexcept(foo());
+}
+```
+
+Eğer fonksiyon noexcept garantisi veriyorsa noexcept true değilse false değeri döndürür.
+
+```Cpp
+void f1(int)noexcept(true);
+void f2(int)noexcept; // f1 ile aynı
+
+void f3(int)noexcept(false); 
+void f4(int); // f3  ile aynı
+
+void f5(int)noexcept(true);
+void f6(int)noexcept(noexcept(f1(10)));
+```
+
+### RTTI(Run Time Type Idendification)
+
+Programın çalışma zamanında nesnenin türünün ne olduğunu anlamaya yönelik bir araçtır.
+
+> sizeof operatorünün operandının bir ifade olması durumunda operator'u parantez kullanmadan da oluşturabiliriz.
+
+```Cpp
+int x = 10;
+int* ptr = &x;
+sizeof(x);    /* ile */   sizeof x;    /* aynı */
+sizeof(*ptr); /* ile */   sizeof *ptr; /* aynı */
+sizeof(int);  /*geçerli*/ sizeof int;  // sentaks hatası
+//sizeof int sentaks hatası çünkü bir ifade değil
+```
+
+#### dynamic_cast
+
+down_cast işleminin çalışma zamanında güvenli bir şekilde yapılıp yapılamayacağını sınar.
