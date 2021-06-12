@@ -92,7 +92,7 @@ int main() {
 }
 ```
 
-`const int& d = foo()` şeklinde belirtilen kodun geçerli olmasının sebebi compiler `const int temp = foo();` şekilinde bir kod üretir ve daha sonra `const int& d = temp` olarakoluşturul    böylece lvalue referans sol değer ifadesinebağlanır. 
+`const int& d = foo()` şeklinde belirtilen kodun geçerli olmasının sebebi compiler `const int temp = foo();` şeklinde bir kod üretir ve daha sonra `const int& d = temp` olarak oluşturulur böylece lvalue referans sol değer ifadesine bağlanır. 
 
 > Bir ifadenin data type başka value category'si başkadır.
 ````C++
@@ -856,7 +856,7 @@ Kopyalamayı derleyici yapıyorsa shallow copy(sığ kopyalama) yapar. Bu durumd
 
 - Bir nesnenin kendine atanmasına self assigment denilir. Bu durumda tanımsız davranış oluşur.
 
-- Copy Ctr'yi siz yazacaksınız sınıfın tüm öğelerinden siz sorumlusunuz. Sadece pointer için yazıp, diğer primitif türler için yazmazsak o öğeler çöp değerler ile başlar.
+- Copy Constructor'u siz yazacaksanız sınıfın tüm öğelerinden siz sorumlusunuz. Sadece pointer için yazıp, diğer primitif türler için yazmazsak o öğeler çöp değerler ile başlar.
 
 ```CPP
 class A {
@@ -930,21 +930,21 @@ public:
 
 #### Move Constructor
 
-Hayatı bitecek bir nesne ile başka bir nesneyi hayata getirecek isek, kaynakları kopyalamak yerine hayatı bitecek o nesnenin kaynaklarını alabiliriz. Modern C++ ile dile eklenen bu sağ taraf referanslarının gücü ile bunu yapabiliriz. Sınıfımıza move semantiğini ekleyeceğiz. Tipik move ctr'si önce gidip diğer nesnenin kaynağını çalıyor, sonra fonksiyona gelen nesneyi destruct edilebilir ama kaynağı olmayan durumda bırakıyor. Eğer bunu derleyicinin yazımına bırakırsak şöyle olmak zorunda.
+Hayatı bitecek bir nesne ile başka bir nesneyi hayata getireceksek, kaynakları kopyalamak yerine hayatı bitecek o nesnenin kaynaklarını alabiliriz. Modern C++ ile dile eklenen bu sağ taraf referanslarının gücü ile bunu yapabiliriz. Sınıfımıza move semantiğini ekleyeceğiz. Tipik move ctor önce gidip diğer nesnenin kaynağını çalıyor, sonra fonksiyona gelen nesneyi destruct edilebilir ama kaynağı olmayan durumda bırakıyor. Eğer bunu derleyicinin yazımına bırakırsak şöyle olmak zorunda.
 
 ```CPP
 class Myclass {
 	T x;
 	U y;
 public:
-	Myclass(Myclass &&r) : x(move(r.x)), y(move(r.y))
+	Myclass(Myclass &&r) : x(std::move(r.x)), y(std::move(r.y))
 	{
 		
 	}
-//move fonksiyonu, sol taraf değeri türünün sağ taraf değerine dönüştürür.
+//std::move fonksiyonu, sol taraf değeri türünü sağ taraf değerine dönüştürür.
 };
-
 ```
+
 ```CPP
 class Name
 {
@@ -961,7 +961,7 @@ public:
 	Name(const char *p) : mlen{std::strlen(p) } {
 		mp = static_cast<char*>(std::malloc(mlen + 1));
 		if (!mp) {
-			std::cerr << "bellek yetersiz !\n";
+			std::cerr << "bellek yetersiz!\n";
 			std::exit(EXIT_FAILURE);
 		}
 		std::strcpy(mp, p);
@@ -970,7 +970,7 @@ public:
 	Name(const Name &other) : mlen(other.mlen) {
 		mp = static_cast<char*>(std::malloc(mlen + 1));
 		if (!mp) {
-			std::cerr << "bellek yetersiz !\n";
+			std::cerr << "bellek yetersiz!\n";
 			std::exit(EXIT_FAILURE);
 		}
 		std::strcpy(mp, other.mp);
@@ -1081,7 +1081,7 @@ Mint y = 13; // 2.   Geçersiz
 ```
 Yukarıdaki durumda derleyici otomatik dönüşüm yapmayacağından yani int türünden Mint sınıf türüne otomatik dönüşüm yapmayacağından 2. ifade geçersiz olur.
 
-Genellikle tek parametreliconstructorlar explicit olarak tanımlanır. Bunun en önemli nedeni otomatik dönüşümlerin bulunması zor olan, can sıkıntılı sorunları engelemek içindir.
+Genellikle tek parametreli constructorlar explicit olarak tanımlanır. Bunun en önemli nedeni otomatik dönüşümlerin bulunması zor olan, can sıkıntılı sorunları engelemek içindir.
 
 Bir önceki `Mint` sınıfını expilicit olmadan yeniden tanımlarsak
 
@@ -1100,7 +1100,7 @@ Mint f = 13.3;   //Geçerli
 Mint g = 13.3f;  //Geçerli
 ```
 
-Görüldüğü gibi explicit olmadan tanımladığımız tüm ifadeler geçerli durumdadır. Böylelikle yanlış bir ifade girilmesi durumunda logic olarak sentaks hatası beklenilen durumda herhangibir sentaks hatası yoktur ve logic hatanın bulunmasıda oldukça can sıkıntılı olacaktır.
+Görüldüğü gibi explicit olmadan tanımladığımız tüm ifadeler geçerli durumdadır. Böylelikle yanlış bir ifade girilmesi durumunda logic olarak sentaks hatası beklenilen durumda herhangi bir sentaks hatası yoktur ve logic hatanın bulunmasıda oldukça can sıkıntılı olacaktır.
 
 Derleyici iki şekilde dönüşüm gerçekleştirir.
 
@@ -1117,6 +1117,7 @@ Yani derleyici öncelikle SC daha sonra UDC veya tam tersi UDC sonra SC şeklind
     //Derleyici Mint x = static_cast<int>(13.5); gibi bir kod üretir.
 
 #### Temporary Object
+
 Öyle ifadeler ki kod içinde isimlendirilmiş bir nesne olmasa da çalışan kodda bir nesnenin varlığı söz konusudur.
 
 Geçici nesnelerin değer kategorisi prvalue expression'dır.
@@ -1148,7 +1149,8 @@ int main()
 ```
 Program getchar fonksiyonuna geldiği zaman destructor çağrıldı. Bu bize `Myclass{13}` şeklinde oluşturduğumuz geçici nesnenin derleyici tarafından üretilip daha sonra sonlandığını göstermektedir.
 
-Geçici nesnelerinin hayatlarını uzatabiliriz. Buna life extension denilmektedir.
+Geçici nesnelerinin hayatlarını uzatabiliriz. Buna `life extension` denilmektedir.
+
 ```Cpp
 const Myclass& r = Myclass{13};
 Myclass&& rx = Myclass{13};
@@ -1157,6 +1159,7 @@ Yukarıdaki kodda geçici olarak oluşturduğumuz kodu const sol taraf referans�
 
 
 #### Friend Decleration
+
 1. Global bir fonksiyona friend'lik vermek.
 2. Bir sınıfın bir üye fonksiyonuna friend'lik vermek.
 3. Bir sınıfın tamamına friend'lik vermek.
@@ -1353,6 +1356,7 @@ private:
 ```
 
 #### Copy elision
+
 - Derleyicin kullandığı bir optimizasyon tekniğidir.
 
 - C++17 stadartları ile bazı durumlarda `mandatory copy elision` uygulanır.
@@ -3026,7 +3030,7 @@ Destructor ya hiç exception throw etmeyecek ya da ederse içinde bunu yakalamas
 void func()noexcept; //exception throw etmeyeceğinin garantisini yapar.
 ```
 
-noexcept operatoruda vardır vardır ve uneveluated context'tir.
+noexcept operatoruda vardır ve uneveluated context'tir.
 
 ```Cpp
 int foo();
@@ -3066,3 +3070,541 @@ sizeof(int);  /*geçerli*/ sizeof int;  // sentaks hatası
 #### dynamic_cast
 
 down_cast işleminin çalışma zamanında güvenli bir şekilde yapılıp yapılamayacağını sınar.
+
+> dynamic_cast operatorünün operandı polimorfik bir türden olmalıdır.
+
+```Cpp
+struct Base {
+    virtual ~Base();
+};
+class Der : public Base {};
+void func(Base* baseptr) {
+    if(Der* derptr = dynamic_cast<Der*>(baseptr)) {
+        //....
+    }
+}
+```
+
+### Typeid Operatorü
+
+<typeinfo> başlık dosyasındadır.
+
+```Cpp
+int x = 5;
+typeid(x);
+```
+
+typeid operatorü type_info sınıfına referans eder bunu derleyici yapar. type_info sınıfı türünden nesne oluşturamayız çünkü ctor'u yoktur mecburen typeid operatorünü kullanıyoruz.
+
+Her tür için bir type_info nesnesi vardır.
+
+```Cpp
+cout << typeid('A').name() << '\n';
+cout << typeid(13).name() << '\n';
+cout << typeid(2.5).name() << '\n';
+class Myclass {};
+Myclass mx;
+cout << typeid(mx).name() << '\n';
+string str{"Enes"};
+cout << typeid(str).name() << '\n';
+```
+
+```Cpp
+int x = 10;
+if(typeid(x) == typeid(int)) {
+    cout << "evet esit\n";
+} else {
+    cout << "hayir esit degil\n";
+}
+```
+
+```Cpp
+class Base {};
+class Der : public Base {};
+Der myder;
+Base* baseptr = &myder;
+cout << typeid(*baseptr).name() << '\n'; // class Base
+```
+Ancak eğer Base'e bir tane sanal fonk. eklersek
+```Cpp
+class Base {
+public:
+virtual void foo() {} 
+};
+class Der : public Base {};
+Der myder;
+Base* baseptr = &myder;
+cout << typeid(*baseptr).name() << '\n'; // class Der
+```
+
+Böylece bu yapıyı biz RTTI gibi kullanabileceğiz.
+
+```Cpp
+void car_game(Car* carptr) {
+    carptr->start();
+    carptr->run();
+    if(typeid(*carptr) == typeid(Mercedes)) {
+        auto pm = static_cast<Mercedes*>(carptr);
+        pm->open_sunroof();
+    }
+    carptr->stop();
+}
+```
+
+RTTI'da dynamic_cast veya typeid operatorünü kullanarak türü run timeda öğrenebiliyoruz peki bir maliyet söz konusu ise hangisi daha az maliyetli olacaktır?
+
+typeid daha az maliyetli olacaktır. dynamic_cast tür çıkarımını yapmak için tüm türemiş sınıflara bakması gerekiyor kakat typeid sadece tek karşılaştırma yapacaktır.
+
+**uneveluated context'te olan operatorler**
+```Cpp
+int foo() {
+    cout << "foo cagrildi\n";
+    return 1;
+}
+auto sz = sizeof foo();             // 1
+decltype(foo()) x = 5;              // 2
+auto p = typeid(foo()).name();      // 3
+constexpr auto b = noexcept(foo()); // 4
+```
+
+## Template(Şablon)
+
+Derleyiciye kod yazdırma aracıdır(Meta kod).
+
+Template çeşitleri
+
+1. Function Template
+1. Class Template
+1. Variable Template (Modern C++)
+1. Alias Template (Modern C++)
+
+Bir şablon oluştururken "template<>" şeklinde açısal parantez içerisine bir type belirterek kullanılır.
+
+```Cpp
+template<typename T> // T bir tür olmak üzere
+template<class T> // T bir tür olmak üzere
+```
+
+> template'den sonra gelen açısal parantez içerisine yazılan class veya typename anahtar sözcüğü arasında hiç bir fark yoktur.
+
+```Cpp
+//template type parameter
+template<typename T>
+```
+
+```Cpp
+//template non-type parameter
+template<int SIZE>
+```
+
+Hem type parameter hem de non-type parameter birlikte kullanılabilir.
+```Cpp
+template<typename T, int SIZE>
+```
+
+Non-type parameter şeklinde C++20'e kadar sadece ya adress türü ya da bir tam sayı olmak zorunda gerçek sayı türünden olmamakta idi.
+Gerçek sayı türünden sabit olma özelliği C++20 ile eklendi.
+
+C++17'e kadar deduction sadece fonksiyon şablonları için yapılıyordu. C++17 ile birlikte sınıf şablonları için deduction kısıtlıda olsa dile eklendi(CTAD(Class Template Argument Deduction)).
+
+```Cpp
+template<typename T>
+void func(T x) {
+    //...
+}
+func(12);
+func(12.5);
+func('0');
+func("enes");
+func(); // Sentaks hatası tür çıkarımı yapılamıyor
+```
+
+Template argument deduction ile `func` fonksiyonundaki T türünün çıkarımı yapılıyor. Eğer tür çıkarılmazsa sentaks hatası olur.
+
+Derleyicinin template ile tür çıkarımını nasıl yaptığını öğrenmek istediğimizde küçük bir hile ile bunu öğrenebiliriz.
+
+```Cpp
+template<typename T>
+class TypeTeller;
+
+template<typename T>
+void func(T x) {
+    TypeTeller<T> X;
+}
+
+int a[10]{};
+func(a); // Derleyicinin verdiği hata T = int* şeklinde olacaktır.
+```
+
+Bu şekilde `func` fonksiyonuna gönderilen parametrenin türünün ne olduğunu anlayabiliriz. Derleyici `incomplete type` olan `TypeTeller`'in tanımını görmek istiyecek ve göremediği için bize nasıl bir çıkarım yapıldığını söyleyecektir.
+
+
+```Cpp
+//Array decay uygulanır
+template<typename T>
+void func(T);
+
+//Array decay uygulanmaz referans ile çıkarım yapılır
+template<typename T>
+void func(T&);
+
+//Forwarding reference/ Universal reference
+template<typename T>
+void func(T&&);
+```
+
+Templatelerde çıkarım auto ile aynı çıkarımı yapmaktadır.
+> Bir istisna eğer initializer_list ile çıkarım yapılmak istenirse auto ile çıkarım yapılabilir fakat template ile çıkarım sentaks hatası olacaktır.
+
+```Cpp
+auto a = {1,2,4,5}; // çıkarım initializer_list olacaktır
+
+template<typename T>
+void func(T x) {}
+func({1,2,4,5}); // sentaks hatası
+```
+
+```Cpp
+//Template parametre paketi
+template<typename... Types>
+class TypeTeller;
+
+template<typename T, typename U>
+void func(T(*fp)(U)) {
+    TypeTeller<T,U> x;
+}
+
+int foo(double);
+func(foo); //çıkarım T => int, U => double
+``` 
+
+> Fonksiyon çağrı operatorunu overload eden sınıflara functor veya function object denir.
+
+```Cpp
+// expilicit template deduction
+template<typename T>
+T foo();
+
+foo<double>();
+```
+
+> template fonksiyonlar implicitly inline'dır.
+
+Fonksiyon şablonları aynı isimli başka işlev şablonları ile veya gerçek fonksiyonlar ile overload edilebilir.
+
+```Cpp
+template<typename T>
+void func(T) {
+    cout << "T turu:" << typeid(T).name() << "\n";
+}
+
+void func(int) {
+    cout << "void func(int x)\n";
+}
+```
+
+Öyle bir şey yapalım ki func işlevi sadece int türden argüman ile çağrılabilsin.
+
+```Cpp
+template<typename T>
+void func(T) = delete;
+
+void func(int);
+```
+
+Eğer bir fonksiyon şablonu ya da sınıf şablonu içinde tempalte parameteresine bağlı bir nested type kullanıyorsak başına "typename" anahtar sözcüğünü koymak gerekir.
+
+```Cpp
+template<typename T>
+void func(T x) {
+    typename T::MyType mt;
+}
+```
+
+#### Perfect Forwarding(Mükemmel Gönderim)
+
+Benim yerime benim istediğim fonksiyon çağrılsın ancak benim gönderdiğim argumanın value category'si, const'ness değişmesin.
+
+```Cpp
+void func(int&) {
+    cout << "void func(int&)\n";
+}
+
+void func(int&&) {
+    cout << "void func(int&&)\n";
+}
+
+void func(const int&) {
+    cout << "void func(const int&)\n";
+}
+//Perfect Forwarding
+template<typename T>
+void foo(T&& x) {
+    func(std::forward<T>(x));
+}
+
+int a = 13;
+const int b = 19;
+func(a);  //int&
+func(b);  //const int&
+func(12); //int&&
+```
+
+__(Explicit) Full Specialization__
+
+    Fonsiyon şablonları(fakat çok özel durumlar dışında kullanmayın)
+    Sınıf şablonları
+
+__Partial Specialization__
+    
+    Sınıf şablonları
+
+```Cpp
+template<typename T>
+T Max(T x, T y) {
+    cout << "primary template\n";
+    return x > y ? x : y;
+}
+
+template<> // diamond template deme eğilimi vardır
+const char* Max(const char* p1, const char* p2) {
+    cout <<"explicit specialization for const char*\n";
+    return std::strcmp(p1,p2) > 0 ? p1 : p2;
+}
+
+auto a = Max(12,45);
+auto b = Max(15.3,24.5);
+auto c = Max("ali","deniz");
+```
+
+```Cpp
+template<typename T>
+void func(T) {
+    cout << "1";
+}
+template<>
+void func(int*) {
+    cout << "2";
+}
+
+template<typename T>
+void func(T*) {
+    cout << "3";
+}
+template<>
+void func(int*) {
+    cout << "4";
+}
+
+int* p = nullptr;
+func(p); // 4 çağrılır.
+```
+4 çağrılmasının nedeni 2 numaralı `func(int*)` fonksiyonu 1 numaralı `func(T)` fonksiyonun full specialization'una katılır. 4 numaralı `func(int*)` fonksiyonu ise 3 numaralı `func(T)` fonksiyonun full specialization'una katılır. func fonksiyonuna int* türünden çağrı yapılırsa derleyici daha specific olan fonksiyonu seçecek böylelikle 3 numaralı func fonksiyon şablonu seçilecek daha sonra bununda full specialization yapıldığı 4 numaralı func fonksiyonu çağrılacaktır.
+
+Şablonun varsayılan argüman alması
+```Cpp
+template<typename T = int>
+class Myclass {
+public:
+    Myclass() {
+        cout << "type t is: " << typeid(T).name() << "\n";
+    }
+};
+
+Myclass<double> mx;
+Myclass<> my; // Varsayılan argüman kullanılacak(int)
+```
+
+Döngü kullanmadan 1'den 100'e kadar olan sayıları yazalım.
+
+```Cpp
+// 1. yöntem
+struct A {
+    A() {
+        static int x = 1;
+        cout << x++ << " ";
+    }
+};
+
+// 2. yöntem
+template<int n>
+struct B : B<n-1> {
+    B() {
+        cout << n << " ";
+    }
+};
+template<>
+struct B<0> {
+    B(){}
+};
+
+A a[100];
+B<100> b;
+```
+
+#### Partial(Kısmi) Specialization
+
+Explicit specialization'da tek bir tür için alternatif kod verilirken partial specialization'da belirli özelliği sağlayan türler için alternatif kod veriyoruz.
+Örneğin tempalte argümanının pointer türü olması durumunda alternatif kod yazarsak;
+```Cpp
+template<typename T>
+struct Myclass {
+    Myclass() {
+        cout <<"primary template for type: " << typeid(T).name() << "\n";
+    }
+};
+
+template<typename T>
+struct Myclass<T*> {
+    Myclass() {
+        cout <<"partial spec. for T*\n ";
+    }
+};
+
+Myclass<int> x1;    //primary
+Myclass<double> x2; //primary
+Myclass<int*> x3;   //partial spec.
+Myclass<long> x4;   //primary
+Myclass<long*> x5;  //partial spec.
+```
+
+typedef bildirimlerini template hale getiremiyoruz fkat using bildirimi ile template hale getirebiliriz.
+
+```Cpp
+template<typename T, typename U>
+class Myclass {};
+
+template<typename T>
+using Eno = Myclass<T,T>;
+
+template<typename T>
+using Iclass = Myclass<T,int>;
+
+template<typename T>
+using epair = std::pair<T,T>;
+
+template<typename T>
+using gset = std::set<T,std::greater<T>,allocator<T>>;
+```
+
+```Cpp
+template<typename T>
+using Ptr = T*;
+int ival{};
+Ptr<int> ip = &ival; // int* ip = &ival;
+```
+
+#### Variadic Template
+
+C'de variadic fonksiyonların bazı dezavantajı vardır.
+1. Type safe değildir.
+1. Gönderilecek argüman sayısı belirtilmek zorundadır.
+
+```Cpp
+template<typename... Types> // template parameter pack
+void func(Types... args);   // function parameter pack
+```
+
+Fonksiyon parametre paketinde kaç tane öğe var bunu bulmak istediğimiz zaman sizeof operatorunu kullanabiliriz fakat bu bildiğimiz sizeof operatoru değil modern C++ ile dile eklenen `sizeof...` operatorudur.
+
+```Cpp
+template<typename... Types>
+void func(Types... args) {
+    sizeof...(Args);
+    constexpr auto n = sizeof...(args);
+}
+```
+
+##### Pack Expansion
+
+Fonksiyon parametre paketinin sonuna üç nokta(`...`) koyduğumuzda derleyici bunu virgülerle ayrılmış bir şekilde açar.
+
+```Cpp
+void foo(int,int,double);
+template<typename... Args>
+void func(Args... args) {
+    foo(args...);
+}
+func(1,2,3.2);
+```
+
+Eğer `foo()` fonksiyonuna çağrı doğru olmasaydı sentaks hatası olacaktı fakat func fonksiyonuna gönderilen parametreler (int,int,double) olduğu için sentaks hatası yoktur.
+
+Eğer func'un içerisinde foo'yu referans ile çağırmak istersek
+```Cpp
+template<typename... Args>
+void func(Args... args) {
+    foo(&args...); // foo(&p1,&p2,&p3)
+    foo(args)...;  // foo(p1),foo(p2),foo(p3)
+}
+```
+
+```Cpp
+template<typename T,typename U, typename F>
+struct Myclass {};
+
+template<typename... Args>
+void func(Args... args) {
+    Myclass<Args...> x; 
+    //Myclass<int,double,float> açılımı olabilir
+}
+```
+
+```Cpp
+template<typename... Args>
+void func(Args... args) {
+    foo<Args>(args)...;
+    //foo<T1>(p1), foo<T2>(p2), ...
+}
+```
+
+Perfectly forward etmek istediğimiz zaman
+```Cpp
+template<typename... Args>
+void func(Args... args) {
+    foo(std::forward<Args>(args)...);
+}
+```
+
+```Cpp
+template<typename T>
+void func(T) {
+    cout << "non-variadic\n";
+}
+
+template<typename... Types>
+void func(Types...) {
+    cout << "variadic\n";
+}
+
+func(1,2);          //variadic
+func(1,5.3,"alis"); //variadic
+func(13);           //non-variadic
+```
+
+```Cpp
+int x = 10;
+int y = 20;
+int z = 30;
+int a[] = {(x++,0),(y++,0),(z++,0),};
+// a'nın 3 elemanı var hepsi '0' olacak fakat x,y,z 1 artmış olacaktır.
+```
+
+Yukarıdaki örnek ile yola çıkarak.
+
+```Cpp
+template<typename... Args>
+void print(Args... args) {
+    int a[] = {(cout<<args,0)...)};
+}
+```
+
+Derleyiciler kullanılmayan varlıklar için sentaks hatası verme eğilimindeler bu yüzden kodu tekrar yazacak olursak
+```Cpp
+template<typename... Args>
+void print(Args... args) {
+    std::initializer_list<int>{(cout<<args,0)...};
+}
+```
+
+## Standart Template Library(STL)
