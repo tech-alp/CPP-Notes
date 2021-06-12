@@ -3590,12 +3590,12 @@ int a[] = {(x++,0),(y++,0),(z++,0),};
 // a'nın 3 elemanı var hepsi '0' olacak fakat x,y,z 1 artmış olacaktır.
 ```
 
-Yukarıdaki örnek ile yola çıkarak.
+Yukarıdaki örnek ile yola çıkarak. Print fonksiyonu yazalım gönderilen her parametreyi ekrana yazsın.
 
 ```Cpp
 template<typename... Args>
 void print(Args... args) {
-    int a[] = {(cout<<args,0)...)};
+    int a[] = {(cout<<args<<" ",0)...)};
 }
 ```
 
@@ -3608,3 +3608,299 @@ void print(Args... args) {
 ```
 
 ## Standart Template Library(STL)
+
+![](images/STL.png)
+
+* OOP library değildir.
+* Çok user friendly değil.
+* Generic olduğu için basit bit hata olması durumunda çok fazla uyarı mesajı vermektedir.
+* Modern C++ ile dile eklenen araçlarla(move schematic, perfect forwarding,lambda expressions, variadic templates,...) ile birlikte eskisine göre çok daha verimli hale geldi.
+* Hata yapma riski daha az.
+
+
+> Hiçbir STL algoritması aldığı range'in doğruluğunu/geçerliliğini sınamaz.
+
+
+### Iterator
+
+Iterator'un kategorileri vardır.
+
+- Input Iterator
+- Output Iterator
+- Forward Iterator
+- Bidirectional Iterator
+- Random Iterator
+
+Iterator'un kategorisi iteratorun interface'inde neler var neler yok onu belirliyor. Iterator'un yeteneğini gösteriyor. Mesela ++,--,* gibi operatorleri var mıdır?
+
+- std::input_iterator_tag
+- std::output_iterator_tag
+- std::forward_iterator_tag
+- std::bidirectional_iterator_tag
+- std::random_iterator_tag
+
+![](images/IteratorCategory.png)
+
+Copy gibi bir iterator konumundan başlayarak bir aralığa yazma(set) işlemi yapan STL algoritmalarının geri dönüş değeri en son yazılan konumdan sonraki konumudur.
+
+Neden algoritmaların parametreleri kaplar değildir?
+
+1. Container ile olsaydı bütün parametreler üzerinde işlem yapılacaktır fakat biz belli aralıktaki değerler için algoritmaları çağırabiliriz.
+
+
+Modern C++'tan önce containerların iterator veren begin() ve end() fonksiyonları sadece sınıfın üye fonksiyonlarıydı fakat modern C++ ile birlikte bunlar global olarakta verildi.
+
+```Cpp
+std::vector<std::string> svec;
+begin(svec); // ADL ile std namespace içerisinde de aranır
+end(svec);   // ADL ile std namespace içerisinde de aranır
+```
+
+__*Find Algoritması:*__
+
+```Cpp
+template<typename InIter, typename Value>
+InIter Find(InIter beg, InIter end,const Value& key) {
+    while(beg != end) {
+        if(*beg == key)
+            return beg;
+        ++beg;
+    }
+    return beg;
+}
+```
+```Cpp
+vector<int> ivec{1,5,7,8,45,6};
+if(auto iter = Find(ivec.begin(),ivec.end(),6); iter != ivec.end()) {
+    cout << "bulundu " << (iter-iter.begin()) << ". indisli oge\n";
+} else {
+    cout << "bulunamadi\n";
+}
+```
+
+__*Find_if Algoritması:*__
+
+```Cpp
+template<typename InIter, typename UnPred>
+InIter FindIf(InIter beg, InIter end, UnPred f) {
+    while(beg != end) {
+        if(f(*beg))
+            return beg;
+        ++beg;
+    }
+    return beg;
+}
+```
+```Cpp
+#include "nutility" // test kodları içerisinde
+int is_ok(int val) {
+    return val%5;
+}
+vector<int> ivec;
+rfill(ivec,100,Irand{0,500});
+print(ivec);
+if(auto iter = FindIf(ivec.begin(),ivec.end(),is_ok); iter != iter.end()) {
+    cout << "bulundu " << (iter-iter.begin()) << ". indisli oge\n";
+} else {
+    cout << "bulunamadi\n";
+}
+```
+__*Count Algoritması:*__
+
+```Cpp
+template<typename InIter, typename Value>
+int Count(InIter beg, InIter end, const Value& key) {
+    int cnt{};
+    while(beg != end) {
+        if(*beg == key)
+            ++cnt;
+        ++beg;
+    }
+    return cnt;
+}
+```
+```Cpp
+int arr[]{5,78,45,6,25,5,48,5,9};
+auto n = Count(begin(arr),end(arr),5);
+cout << "arr dizisi icerisinde "<< n << " adet 5 vardir\n";
+```
+
+__*Count_if Algoritması:*__
+
+```Cpp
+template<typename InIter, typename UnPred>
+int CountIf(InIter beg, InIter end, UnPred f) {
+    int cnt{};
+    while(beg != end) {
+        if(f(*beg))
+            ++cnt;
+        ++beg;
+    }
+    return cnt;
+}
+```
+```Cpp
+#include "nutility" // test kodları içerisinde
+class DivPred {
+public:
+    DivPred(int val) : mval(val) {}
+    bool operator()(int x) const {
+        return x%mval == 0;
+    }
+private:
+    int mval;
+};
+vector<int> ivec;
+rfill(ivec,100'000,Irand{0,5000}); //nutility fonksiyonu
+int val;
+cout << "kaca tam bolunenleri saymak istersiniz: ";
+cin >> val;
+cout << CountIf(ivec.begin(),ivec.end(),DivPred{val});
+```
+
+__*Copy Algoritması:*__
+
+```Cpp
+template<typename InIter, typename OutIter>
+OutIter Copy(InIter beg, InIter end, OutIter destbeg) {
+    while(beg != end) {
+        *destbeg++ = *beg++;
+    }
+    return destbeg;
+}
+```
+```Cpp
+vector<string> svec{"enes","burak","gorkem","ozan"};
+list<string> ilist(4);
+Copy(svec.begin(),svec.end(),ilist.begin());
+```
+
+__*Copy_if Algoritması:*__
+
+```Cpp
+template<typename InIter, typename OutIter, typename UnPred>
+OutIter CopyIf(InIter beg, InIter end, OutIter destbeg, UnPred f) {
+    while(beg != end) {
+        if(f(*beg))
+            *destbeg++ = *beg;
+        ++beg;
+    }
+    return destbeg;
+}
+```
+```Cpp
+bool is_ok(const std::string& str) {
+	return str.size() == 6;
+}
+vector<string> svec{"enes","burak","gorkem","ozan"};
+list<string> ilist(4);
+CopyIf(svec.begin(),svec.end(),ilist.begin(),is_ok);
+```
+
+Boş bir container'ın begin fonksiyonun geri dönüş değeri end fonksiyonunun geri dönüş değerine eşittir. Bu iteratorlar asla dereference edilmemelidir aksi halde "undefined behaviour" olur.
+
+```Cpp
+vector<string> svec;
+cout << "svec.size() = " << svec.size() << "\n";
+cout << boolalpha << svec.empty() << "\n";
+auto iter_beg = svec.begin();
+auto iter_end = svec.end();
+cout << boolalpha << (iter_beg==iter_end) << "\n";
+cout << *iter_beg; // UB(Undefined Behaviour)
+```
+
+Neden global begin ve end fonksiyonları eklendi?
+
+- En önemli nedini primitive tür dizileri içindir.
+
+```Cpp
+template<typename T, size_t size>
+T* Begin(T(&r)[size]) {
+    return &r[0];
+}
+template<typename T, size_t size>
+T* End(T(&r)[size]) {
+    return &r[size];
+}
+
+int a[] = {2,3,4,8,9};
+Begin(a); // std::begin(a)
+End(a);   // std::end(a)
+```
+
+Öyle bir şey yapalım ki copy algoritması ile hedef iterator adresine eklem yoluyla değerleri kopyalayalım.
+
+```Cpp
+vector<string> svec{"oguz","akif","alp","ahmet"};
+vector<string> dvec;
+copy(svec.begin(),svec.end(),dvec.begin()); //UB(Undefined Behaviour)
+```
+
+yukarıdaki kodda "UB" olmasının nedeni dvec nesnesinin boş container olması ve bu boş container'a copy algoritmasındaki içerik operaotoru(*) ile erişmek istemek sebep olmuştur.
+Peki öyle bir şey yapalım ki bu kod "UB" olmadan ekleme yoluyla kopyalansın.
+
+```Cpp
+template<typename C>
+class BackInserterIterator {
+public:
+    BackInserterIterator(C& c) : _c(c) {}
+    BackInserterIterator& operator++() { return *this; }
+    BackInserterIterator& operator++(int) { return *this; }
+    BackInserterIterator& operator*() { return *this; }
+    BackInserterIterator& operator=(const typename C::value_type& val) {
+        _c.push_back(val);
+        return *this;
+    }
+    BackInserterIterator& operator=(typename C::value_type&& val) {
+        cout << "move\n";
+        _c.push_back(std::move(val));
+        return *this;
+    }
+private:
+    C& _c;
+};
+template<typename T>
+BackInserterIterator<T> BackInserter(T& type) {
+    return BackInserterIterator<T>{type};
+}
+
+std::list<int> ilist{1,2,4,5,7,8};
+std::vector<int> ivec;
+BackInsertIterator<std::vector<int>> bv(ivec);
+Copy(ilist.begin(),ilist.end(),BackInserter(ivec)); //std::copy çalışmaz.
+Print(ivec); //nutility header
+```
+
+Yukarıdaki kodta görüldüğü üzere ivec container'ı boş olmasına rağmen ekleme yoluyla kopyalama yaptık. Dikkat ederseniz std::copy fonksiyonunu değilde bizim yazdığımız Copy fonksiyonunu çağırdım bunun nedeni std::copy geçilen OutIter türününe bazı kontroller eklemektedir. Bu örneği standart olan `back_insert_iterator` sınıf şablonuyla `back_inserter` fonksiyonunu kullanarak yazalım.
+
+```Cpp
+std::list<int> ilist{1,2,4,5,7,8};
+std::vector<int> ivec;
+std::copy(ilist.begin(),ilist.end(),back_inserter(ivec));
+```
+
+Copy'de sondan ekleme olduğu gibi baştan ekleme yapmakta mümkündür. Bunu front_inserter fonksiyonu ile yapabiliriz. Fakat bunu yapmak için fonksiyonun parametresi olan container'ın push_front fonksiyonu olmak zorundadır.
+
+> push_back fonksiyonu sondan eklemenin constant time olması durumunda seçilmiştir.
+
+### Reverse Iterator
+
+Sınıfların rbegin ve rend fonksiyonları reverse iterator nested type'ı türünden iterator döndürürler.
+
+![](images/ReverseIterator.png)
+
+
+| Containerların iteratorleri | Kullanımı |
+| - | :- |
+| iterator | myvec.begin(); myvec.end() |
+| const_iterator | myvec.cbegin(); myvec.cend() |
+| reverse_iterator | myvec.rbegin(); myvec.rend() |
+| const_reverse_iterator | myvec.crbegin(); myvec.crend() |
+
+Iteratorleri manipule eden global şablonlar;
+- advance
+- distance
+- next (C++11)
+- prev (C++11)
+- iter_swap
+
