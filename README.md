@@ -3904,3 +3904,332 @@ Iteratorleri manipule eden global şablonlar;
 - prev (C++11)
 - iter_swap
 
+#### Advance
+Iteratorleri arttırmak amacıyla kullanılır. Bunun asıl nedeni template kodlarda iterator olarak hangi iterator kategorisi olduğunu bilmeden arttırma işlemini yapabilmektir. Örneğin input_iterator kategorisinde "+=" operatoru yoktur. Arttırma için "++" operatoru kullanılır. Random iterator için ise "+=" operatoru vardır. Derleyici advance fonksiyonunun implementasyonunu yaparken gelen iterator kategorisini en düşük iterator kategorisi olarak varsayarak implemente etseydi.bu sefer bir döngü içersinde sürekli dönen "++" operatorü(tüm iterator kategorileri "++" operatorunu overload eder) ile bir kod yazması gerekirdi bu da verimli bir durum olmazdı. Bunun yerine derleyici `tag-dispatch` mekanizmasını kullanarak gelen iterator kategorisine göre o iterator kategorisini işleyerek koda çağrı yapmaktadır.
+
+```Cpp
+template<typename Iter>
+void Advance_impl(Iter& r, int n, std::random_access_iterator_tag) {
+    r += n;
+}
+
+template<typename Iter>
+void Advance_impl(Iter& r, int n, std::bidirectional_iterator_tag) {
+    while(n--) {
+        ++r;
+    }
+}
+
+template<typename Iter>
+void Advance(Iter& r,int n) {
+    Advance_impl(r,n,typename Iter::iterator_category{});
+}
+```
+
+```Cpp
+//#include "nutility"
+list<string> slist;
+rfill(slist,10,rname);
+print(slist);
+auto iter = slist.begin();
+Advance(iter,5);
+cout << *iter << "\n";
+```
+
+#### Distance
+
+Random iterator'un altındaki iterator kategorileri için "-" operatoru yoktur. Bu yüzden iki ietartor arasındaki farkı almak için farklı bir yöntem kullanmamız gerekir. Fakat biz hangi iterator olursa olsun iki iterator arasındaki farkı `distance` fonksiyonu ile bulabiliriz.
+
+```Cpp
+vector<int> ivec{1,2,3,4,17,5,7,8};
+auto iter_found = find(ivec.begin(),ivec.end(),17);
+cout << distance(iter_found,ivec.begin()) << "\n";
+```
+
+size üye fonksiyonu olmayan tek container forward_list container'dır. Bu yüzden distance fonksiyonu ile size değerini buluyoruz.
+
+```Cpp
+forward_list<int> mylist{1,2,3,4,5};
+cout << "size = " << distance(mylist.begin(),mylist.end()) << "\n";
+```
+
+#### Next & Prev
+
+```Cpp
+list<int> ilist{1,3,5,7,9,11};
+next(ilist.begin());   // 3  (next(ilist.begin(),1))
+next(ilist.begin(),5); // 11
+```
+
+#### iter_swap
+
+Aynı veya farklı containerlarin iterator konumundaki öğeleri takas etmek için kullanılır.
+
+```Cpp
+vector<int> ivec{1,3,5,8};
+print(ivec);
+iter_swap(ivec.begin(),prev(myvec.end()));
+print(ivec);
+```
+
+Global size fonksiyonu vardır.
+```Cpp
+vector<int> ivec(5);
+list<double> dlist(5);
+int a[] = {1,2,3,4,5};
+std::cout << "ivec.size() = " << ivec.size() << '\n';
+std::cout << "dlist.size() = " << dlist.size() << '\n';
+std::cout << "size a = " << sizeof(a)/sizeof(*a) << '\n';
+std::cout << size(ivec) << " " << size(dlist) << " " << size(a) << '\n';
+constexpr auto s = size(a); // diziler için size sabit ifadesi döndürür.
+```
+
+
+## Lambda Expression
+
+Lambda ifadesi nedir?
+
+Derleyici bir lambda karşılığı;
+
+- Derleyici ifadenin bulunduğu yerde bir sınıf tanımlar.
+- Tanımladığı sınıfa bir üye `operator()` işlevi yazar.
+- Koddaki lambda ifadesini oluşturduğu sınıf türünden bir geçici nesne(temprorary object) dönüştürür.
+
+__*closure type:*__ Derleyici lambda ifadesi karşılığı oluşturduğu sınıf türü. 
+
+__*closure object:*__ Derleyici lambda ifadesi karşılığı oluşturduğu sınıf nesnesi.
+
+![](images/lambdaexpr.png)
+
+- Lambda ifadeleri daha iyi okunabilir, daha iyi anlaşılabilir bir kod oluşturuyor. 
+- Çağrılan fonksiyonların kodunu görebilmek için kaynak dosyasında bir başka yere gitmek zorunda kalmıyoruz.
+- İşlev göstericilerine göre daha verimli bir kod oluşturuyor(inline olarak açabilir).
+- Bir fonksiyondan geri dönüş değeri olarak alabiliriz.
+- Fonksiyon çağrısı için bir değişken oluşturmak zorunda değiliz. Lambda ifadesini yazdığımız yerde fonksiyonu çağırabiliriz.(IIFE)
+- std::fonction yoluyla bir başka fonksiyona argüman olarak geçebiliriz.
+- Bir fonksiyon şablonuna argüman olarak gönderebiliriz.(Algoritmalara argüman olarak geçebiliriz)
+
+
+Derleyici lambda ifadesini
+
+```Cpp
+[](){}(); // Derleyici sanki lambda_1_2()(); şeklinde kod üretir.
+class lambda_1_2 {
+public:
+    constexpr void operator()const {}
+};
+```
+
+Lambda ifadesinin parametre prantezi bazı durumlarda yazılmayabilir.
+1. Yazılacak lambda ifadesinin parametre değişkeni olmazsa
+1. Parametre parantezi ile kodun kodun yazıldığı süslü parantez arasına gelen anahtar sözcükler yoksa
+
+```Cpp
+[](){ cout << "Hello World!\n"; };
+[]{ cout << "Hello World!\n"; };
+```
+
+```Cpp
+auto f = [](int x){ return x*5; };
+class lambda_1_2 {
+public:
+    constexpr int operator() const {
+        return x*5;
+    }
+};
+```
+
+lambda ifadesinin operator çağrı fonksiyonun geri dönüş değerini biz belirleyebiliriz. "Tralling return type" sentaksını kullanarak yaparız.
+
+```Cpp
+[](int x)->double{ return x*5; }
+[]()->char{ return 1; }
+```
+
+Lambda ifadelerinden önce STL algoritmalarına callable olarak ya fonksiyon olarak tanımlayacak ve o fonksiyon adresini geçerdik ya da bir function object oluşturmamız geremekteydi.
+
+```Cpp
+class LenPred {
+public:
+    LenPred(size_t len) : mlen(len) {}
+    bool operator()(const std::string& s)const {
+        return s.lenght()==mlen;
+    }
+};
+std::vector<string> svec("Enes","Ozan","Emre","Ece","Ahmet");
+copy_if(begin(svec),end(svec),ostream_iterator<string>{cout," "},LenPred(4));
+```
+Yukarıdaki function object ile çağrı yapılan "copy_if" algoritmasını lambda ile oluşturursak.
+
+```Cpp
+copy_if(begin(svec),end(svec),ostream_iterator<string>{cout," "},
+    [](const string& s){ return s.length()==4; });
+```
+
+Köşeli parantez içerisine yazılan ifadeye `capture close` denir. Derleyici lambda ifadesi karşılığı yazacağı sınıf içerisine bu "capture close" olan değişekni bir veri elemanı olarak ekler.
+
+```Cpp
+int a = 10;
+auto f = [a](int x) { return x*a; };
+
+class lambda_1_1 {
+public:
+    lambda_1_1(int a) : a(a) {}
+    int operator()(int x) { return x*a; }
+private:
+    int a;
+};
+```
+
+Global değişkenler ve statik yerel değişkenler capture edilemez.
+
+```Cpp
+int g = 10;
+int foo() {
+    static int x = 10;
+    [g]() {}; // sentaks hatası
+    [x]{};    // sentaks hatası
+    []{++x};  // geçerli
+    []{++g};  // geçerli
+}
+```
+
+![](images/lambdaexpr-2.png)
+
+
+#### Lambda init capture
+
+Taşıma sematiği ile capture oluşturmak için ilk değer vererek capture edebiliriz. unique_ptr sınıfı türünden bir sınıfı kopyalama yoluyla yakalamak söz konusu değildir çünkü zaten kopyalamaya kapalı bir sınıftır. Peki ben derleyiciye bir sınıf kodu yazdırmak istesem ve derleyici tarafından yazılan sınıfın veri elemanının unique_ptr olmasını istesem ve bu da capture edilen nesnenin kayanğını çalsın istiyorum.
+
+```Cpp
+auto ptr = make_unique<string>("Enes Alp");
+auto f = [uptr](){}; // Sentaks hatası uptr kopyalamaya kapalı
+auto fx = [uptr = move(uptr)](){}; // Geçerli lambda init capture
+```
+
+> Lambda init capture asıl kullanılma amacı taşıma semantiğini desteklemesidir.
+
+C++14 ile generic lambda eklendi.
+```Cpp
+auto fx = [](auto x, auto y){return x+y;};
+```
+
+C++17 ile constexpr anahtar sözcüğü eklendi.
+```Cpp
+auto f = []()constexpr{};
+```
+
+C++20 ile template lambda eklendi.
+```Cpp
+auto fx = [](int x, int y){return x+y;};
+auto fy = [](auto x, auto y){return x+y;};
+auto fz = [](auto x, decltype(x) y){return x+y;};
+auto ft = []<typename T>(T x, T y){return x+y;};
+```
+
+C++20'den önce stateless lambda ifadelerinin default constructorları delete edilmiş durumdadır.
+```Cpp
+auto fx = [](int x){return x*2;};
+decltye(fx) fy; // C++'den önce Sentaks hatası
+// default c'tor deleted.
+```
+
+
+> Herhangi bir değişkeni capture etmeyen ve herhangi bir statik değişkeni değiştirmeyen lambda ifadelerine *`stateless lambda`* denir.
+
+Stateless bir lambda ifadesinden fonksiyon pointeri türü elde etmek istediğimizde kullanılan bir idiom vardır. Buna `positive lambda idiom` denilmektedir.
+```Cpp
+int(*f)(int) = +[](int x){return x+5;};
+```
+
+işaret operatorunun operandı bir sınıf nesnesi olmayacağından derleyici lambda ifadesini fonksiyon pointeri türüne dönüştürmektedir.
+
+funtional başlık dosyasının içerisinde aritmetik işlemlerin hemen hemen hepsinin bir function object sınıfı vardır.
+
+```Cpp
+cout << plus<int>()(10,20)     << "\n"; //30
+cout << multiplies<int>()(2,5) << "\n"; //10
+cout << devides<int>()(10,5)   << "\n"; //2
+cout << negate<int>()(10)      << "\n"; // -10
+```
+
+```Cpp
+template<class InIter,class OutIter,class UnOp>
+OutIter Transform(InIter beg, InIter end, OutIter destbeg, UnOp f) {
+    while(beg != end) {
+        *destbeg++ = f(*beg++);
+    }
+    return destbeg;
+}
+vector<int> ivec{1,2,4,5,9,11,13,15};
+list<int> ilist(ivec.size());
+Transform(ivec.begin(),ivec.end(),ilist.begin(),
+    [](int x){return x*2;});
+```
+
+```Cpp
+template<class InIter1, class InIter2, class OutIter, class BinOP>
+OutIter Transform(InIter1 beg1,InIter1 end1, InIter2 beg2, OutIter destbeg, BinOp f) {
+    while(beg1 != end1) {
+        *destbeg++ = f(*beg1++,*beg2++);
+    }
+    return destbeg;
+}
+//#include "nutility"
+vector<string> namevec;
+vector<string> surnamevec;
+rfill(namevec,20,rname);
+rfill(surnamevec,20,rfame);
+print(namevec);
+print(surnamevec);
+list<string> person_list(namevec.size());
+Transform(begin(namevec),end(namevec),begin(surnamevec),end(surnamevec),
+begin(person_list),[](const string& s1, const string& s2){return s1 + ' ' + s2;});
+print(person_list);
+```
+
+"Call by copy" olan bir fonksiyonuna sağ taraf değeri nesnesi geçersek bu fonksiyon kopyalama yerine doğrudan o nesneyi oluşturabilir(copy elision).
+
+```Cpp
+class Myclass {
+public:
+    Myclass(string s) : ms(move(s)) {}
+private:
+    string ms;
+};
+```
+
+Yukarıdaki Myclass sınıfının constructor'u "string&" değilde "string" olarak seçilmesinin nedeni sağ taraf değeri geçilmesi durumunda bir kopyalanma yapılmasın(copy elision) direk o string nesnesini oluştrusun diyedir. Bundan sonra ise s'i taşıma haline getiriyoruz(bundan bir avantaj elde ediliyorsa) böylece kopyalama maliyetini azaltıyoruz.
+
+```Cpp
+template<class InIter, class UnOp>
+UnOp ForEach(InIter beg, InIter end, UnOp f) {
+    while(beg != end) {
+        f(*beg++);
+    }
+    return f;
+}
+//#include "nutility"
+vector<int> ivec;
+rfill(ivec,20,rand);
+ForEach(begin(ivec),end(ivec),[](int x){cout << x+1 << " " ;});
+```
+```Cpp
+class Summer {
+public:
+    Summer(int val) : mval(val) {}
+    int operator()(int x)const {
+        ++mcnt; return x+mval;
+    }
+    int get_count()const{return mcnt;}
+private:
+    int mcnt;
+    int mval;
+};
+
+auto f = ForEach(begin(ivec),end(ivec),Summer(19));
+f.get_count(); /* Bu şekilde ForEach ile işlem yapıldıktan sonra
+function object değişmemiş ve bu function objectten bir takım
+verileri elde etmek istediğimiz zaman for_each algoritmasının
+geri dönüş değerini kullanırız.*/
+```
