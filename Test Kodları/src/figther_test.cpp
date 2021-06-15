@@ -3,7 +3,7 @@
 
 int main() {
     Fighter f1("Enes");    
-    Fighter* f2 = new Fighter("Burak");
+    Fighter* f2 = new Fighter("Ahmet");
     auto f3 = new Fighter("Tayfur");
     Fighter f4("Ayse");
     delete f2;
