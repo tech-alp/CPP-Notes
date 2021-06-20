@@ -18,19 +18,77 @@
     </style>
 -->
 
-## Reference
+## İçerik
 
-```txt
-              expression
-               /     \ 
-              /       \
-             /         \
-        glvalue       rvalue
-          / \          / \
-         /   \        /   \
-        /     \      /     \
-    lvalue     xvalue     prvalue
-```
+- [Reference](#reference)
+    - [Value Category](#value-category)
+    - [Type Category](#type-category)
+
+- [Auto Type Deduction](#auto-type-deduction)
+- [decltype](#decltype)
+- [constexpr](#constexpr)
+
+- [Function Overloading](#function-overloading)
+    - [Variadic Conversion](#variadic-conversion)
+    - [User-defined Conversion](#user-defined-conversion)
+    - [Standard Convertion](#standard-convertion)
+    - [Exact Match](#exact-match)
+    - [Promotion](#promotion)
+
+- [Numaralandırma Türleri](#numaralandırma-türleri)
+    - [Enum](#enum)
+    - [Enum classes](#enum-classes)
+
+- [Tür Dönüşüm Operatörleri](#tür-dönüşüm-operatörleri)
+    - [C-style casting](#c-style-casting)
+    - [static_cast](#static_cast)
+    - [const_cast](#const_cast)
+    - [reinterpret_cast](#reinterpret_cast)
+
+- [Extern "C" Bildirimi](#extern-\"c\"-bildirimi)
+
+- [Classes](#classes)
+    - [Mutable](#mutable)
+    - [One Defination Rule](#one-defination-rule)
+    - [Inline fonksiyonlar](#inline-fonksiyonlar)
+    - [Special member functions](#special-member-functions)
+        - [Destructor](#destructor)
+        - [Move Constructor](#move-constructor)
+    - [Constructor initialization list](#constructor-initialization-list)
+    - [Default member initializer](#default-member-initializer)
+    - [Explicit Constructor](#explicit-constructor)
+    - [Temporary Object](#temporary-object)
+    - [Friend Decleration](#friend-decleration)
+
+- [Operator Overloading](#operator-overloading)
+- [Copy elision](#copy-elision)
+- [Boolean context](#boolean-context)
+- [Complete / Incomplete Type](#complete-\-incomplete-type)
+    - [Incomplete Type](#incomplete-type)
+    - [Complete Type](#complete-type)
+- [Sınıfın Statik Veri Elemanları Ve Üye Fonksiyonları
+](#sınıfın-statik-veri-elemanları-ve-üye-fonksiyonları
+)
+- [if with initialization](#if-with-initialization)
+- [Inline Variable](#inline-variable)
+- [Nested Type](#nested-type)
+- [Piml Idiom(Pointer Implementation)](#piml-idiom)
+- [Composition](#composition)
+- [Aggreagation](#aggreagation)
+- [Delegating Constructor](#delegating-constructor)
+- [Raw String Literal](#raw-string-literal)
+
+- [Namespaces](#namespaces)
+
+
+ ## Reference
+
+<p align="center">
+  <p align="center">
+    <img src="images/references.png" />
+  </p>
+</p>
+
 
 #### Value Category
 
@@ -111,13 +169,13 @@ const int& z{dval}; //invalid. Narrowing conservion
 ```
 
 - `int x(10);` &#8594; direct initialization
-- `int x{};`   &#8594; value, uniform, bracet initialization
+- `int x{};`   &#8594; value, uniform, braced initialization
 - `int x{10};` &#8594; direct list initialization
 
 **Uniform initialization neden eklendi?**
 1. Neye ilk değer verirsen ver her zaman kullanılabilir.
 1. Narrowing conversion durumunu engellemek için.
-1. Most vexing parse(Scott Meyers tarafından dile ekledi)
+1. Most vexing parse(Scott Meyers tarafından dile ekledi) durumunu engelemek için.
 
 __Most vexing parse__
 ```C++
@@ -208,7 +266,7 @@ Eğer ki `auto&&` bir sol taraf ifadesine bağlanılması durumunda `T& &&` çı
 
 ---
 
-## Decltype
+## decltype
 
 Eğer decltype operatörünün operandı olan ifade bir isim
 formunda değil ise ifadenin value kategorisine bakılacak.
@@ -252,25 +310,25 @@ olarak tanımlanır.
 Aynı isimli işlevler aynı kapsamda(scope) olmalıdır.
 Aynı kapsamdaki aynı isimli işlevlerin imzaları farkı olacak.
 
-#### Function Redeclaretion
+__*Function Redeclaretion*__
 ```C++
 void func(int a, int b);
 void func(int, int);
 ```
 
-#### Syntax Error
+__*Syntax Error*__
 ```C++
 void func(int a, int b);
 int func(int, int);
 ```
 
-#### Function Overloading
+__*Function Overloading*__
 ```C++
 void func(int a, int b);
 void func(int);
 ```
 
-1. **Variadic conversion**
+1. ### Variadic conversion
 
 __İstisna:__ C'de variadic fonksiyonlar sadece *elipsis(...)* kullanılarak tanımlanamaz. C++ bu gerçerlidir.
 
@@ -286,7 +344,7 @@ int main()
 }
 ```
 
-2. **User-defined Conversion**
+2. ### User-defined Conversion
 
     Programlayıcı tarafından tanımlanan dönüşümlere denir.
     ```C++
@@ -300,7 +358,7 @@ int main()
     }
     ```
 
-3. __Standard Convertion__
+3. ### Standard Convertion
 
     - int    &#8594; double
     
@@ -443,7 +501,7 @@ int main() {
 - reinterpret_cast
 - dynamic_cast
 
-#### C-style casting
+### C-style casting
 Tüm cast işlemlerinde `()` parantez operandı içerisinde hedef tip belirtilerek yapılır(`(type target)expr`).
 
 ````C++
@@ -453,7 +511,7 @@ int* ptr = (int*)&x;
 *ptr = 48; //Valid but undefined behaviour
 ````
 
-#### static_cast
+### static_cast
 -  int*'dan void*'a implicit type conversion vardır.
 
 - int*'dan void*'a veya void*'dan int*'a hem static_cast hem de reinterpret_cast kullanılabilir.
@@ -464,7 +522,7 @@ void* sptr = static_cast<void*>(&x);
 void* rptr = reinterpret_cast<void*>(&x);
 ````
 
-#### const_cast
+### const_cast
 ````C++
 const int x = 10;
 int* ptr = const_cast<int*>(&x);
@@ -485,7 +543,7 @@ char* Strchr(const char* p, int c) {
 }
 ```
 
-#### reinterpret_cast
+### reinterpret_cast
 ```C++
 int x = 145981;
 char* c = reinterpret_cast<char*>(&x);
@@ -497,7 +555,7 @@ int* y = reinterpret_cast<int*>(c);
 
 ---
 
-#### Extern "C" Bildirimi
+## Extern "C" Bildirimi
 
 C'de derlenmiş kütüphaneleri C++'da kullanabilmek için belirtilir.
 
@@ -528,7 +586,7 @@ extern "C" {
 ```
 
 
-### Classes
+## Classes
 
 ```C++
 class Myclass {
@@ -612,7 +670,7 @@ int main() {
     m.func(); // Geçersiz sentaks hatası const T* --> T*
 }
 ```
-#### Mutable
+### Mutable
 
 Sınıfın const bir üye fonksiyonunun sınıfın static olmayan veri elemanlarını değiştirebilmesi için veri elemanının `mutable` olması gerekir.
 
@@ -631,9 +689,9 @@ int Date::day_of_year() const {
 }
 ```
 
-#### One Defination Rule(ODR)
+### One Defination Rule
 
-Bir proje içerisinde aynı varlığın birden fazla tanımı olmaz. Eğer bu varlığın tanımı aynı kaynak dosyası içerisinde olursa sentaks hatası olur. Farklı kaynaklarda olursa sentaks hatası değil fakat ill-formed  olur.
+Bir proje içerisinde aynı varlığın birden fazla tanımı olmaz. Eğer bu varlığın tanımı aynı kaynak dosyası içerisinde olursa sentaks hatası olur. Farklı kaynaklarda olursa sentaks hatası değil fakat ill-formed olur.
 
 
 > C++ dilinde yazılımsal öyle varlıklar var ki bu varlıkların projeyi oluşturan farklı kaynak dosyalarda birden fazla kez tanımlanması(token by token aynı olması) durumunda ill-formed değildir.
@@ -661,7 +719,7 @@ __ODR'a  uyanlar;__
 - class template definitions
 - ...
 
-#### inline fonksiyonlar
+### inline fonksiyonlar
 
 compiler optimizasyonu,
 
@@ -693,9 +751,12 @@ Hangi fonksiyonlar inline olarak tanımlanır?
 1. Sınıfın static üye işlevleri
 1. Sınıfın friendlik verdiği işlevler
 
-#### Sınıfların özel üye fonksiyonları(Special member functions)
+## Special member functions
+
+Sınıfların özel üye fonksiyonları:
+
 - default constructor       X();
-- deconstructor             ~X();
+- destructor               ~X();
 - copy constructor          X(X const&);
 - move constructor(C++11)   X(X&&);
 - copy assignment           X& operator=(X const&);
@@ -708,9 +769,9 @@ Statik ömürlü global nesneler için constructor main'den önce çağrılır.
 - static initialization fiasco
 - static initialization problem
 
-#### Deconstructor(Yıkıcı fonksiyon)
+#### Destructor(Yıkıcı fonksiyon)
 
-Bir sınıfın sadece bir tane deconstructor'u vardır ve hiçbir parametre almaz.
+Bir sınıfın sadece bir tane destructor'u vardır ve hiçbir parametre almaz.
 
 ```C++
 class Myclass {
@@ -734,7 +795,7 @@ func(12);  // Geçerli
 func(2.4); // Geçersiz function deleted.
 ```
 
-#### Constructor initialization list
+### Constructor initialization list
 
 ```C++
 class Myclass {
@@ -751,7 +812,7 @@ private:
 Class içerisindeki üye elemanlarının sırası ile kurucu ilklendirme listesi(constructor initialization list) aynı sırada olması iyi bir alışkanlıktır. Fakat yukarıdaki sınıfda sıraya uyulmuş olunmasada derleyici ilk olarak t'yi daha sonra u'yi ilklendirir.
 
 
-#### Default member initializer
+### Default member initializer
 
 Class içerisinde parantez`()` atomu ile üye elemanları ilklendirme(`default initialize`) yapılamaz.
 
@@ -1065,7 +1126,7 @@ Aşağıdaki görselde bir sınıfın hangi durumlarda tanımlanırsa derleyici 
 
 ![](images/specialmembers.svg)
 
-#### Explicit Constructor
+### Explicit Constructor
 Otomatik dönüşümün sentaks hatası vermesi için kullanılır. Ancak tür dönüşüm operatorleri ile kullanılabilir.
 
 ```CPP
@@ -1116,7 +1177,7 @@ Yani derleyici öncelikle SC daha sonra UDC veya tam tersi UDC sonra SC şeklind
     Mint x = 13.5; // ilk olarak SC daha sonra USC
     //Derleyici Mint x = static_cast<int>(13.5); gibi bir kod üretir.
 
-#### Temporary Object
+### Temporary Object
 
 Öyle ifadeler ki kod içinde isimlendirilmiş bir nesne olmasa da çalışan kodda bir nesnenin varlığı söz konusudur.
 
@@ -1158,7 +1219,7 @@ Myclass&& rx = Myclass{13};
 Yukarıdaki kodda geçici olarak oluşturduğumuz kodu const sol taraf referansı değerine veya sağ taraf referansı değerine bağlayarak life extension yapmış olduk.
 
 
-#### Friend Decleration
+### Friend Decleration
 
 1. Global bir fonksiyona friend'lik vermek.
 2. Bir sınıfın bir üye fonksiyonuna friend'lik vermek.
@@ -1282,7 +1343,7 @@ x<y ---> x.operator<(y)
 
 > Operatörlerin dildeki belirlenmiş öncelik seviyesi ve öncelik yönünü associativity değiştirilemez.
 
-#### Index([ ]) opeatorü
+#### Index([ ]) operatorü
 
 - T& opeartor[](size_t idx);
 - const T& operator[](size_t idx)const;
@@ -1307,7 +1368,7 @@ private:
 }
 ```
 
-#### * operatörü
+#### İçerik(*) operatorü
 
 Unary bir operatordür. Global olarak tanımlanamazlar. Sadece sınıf içerisinde tanımlanabilir.
 
@@ -1355,7 +1416,7 @@ private:
 
 ```
 
-#### Copy elision
+### Copy elision
 
 - Derleyicin kullandığı bir optimizasyon tekniğidir.
 
@@ -1399,7 +1460,7 @@ Logic operatörlerin operandları
 - do while parantezindeki ifade
 - for döngü deyiminin iki noktalı virgül arasındaki ifade
 
-#### Complete / Incomplete Type
+### Complete \ Incomplete Type
 Eğer derleyici bir kaynak kod dosyasında o sınıfın tanımını görüyorsa complete type, sadece bildirimini görüyorsa incomplete type'dır.
 
 - Sınıfın veri elemanı incomplete type olamaz.
@@ -1433,7 +1494,7 @@ Eğer derleyici bir kaynak kod dosyasında o sınıfın tanımını görüyorsa 
 
 Incomplete type olarak tanımlama yapmanın en önemli nedeni başlık dosyalarıdır. Bir başlık dosyasının baka bir başlık dosyasını dahil etmesi durumunda birden fazla başlık dosyası eklenmiş olabilir. Biz istemediğimiz başlık dosyalarınıda include etmiş olabiliriz. Bu bizim compile time süremizi uzatmakla birlikte, asıl önemli olan bağımlılık oluşturmasıdır. Bağımlılığı azaltmak için incomplete type olarak tanımlanması gerekir.
 
-#### Sınıfın Statik Veri Elemanları Ve Üye Fonksiyonları
+### Sınıfın Statik Veri Elemanları Ve Üye Fonksiyonları
 
 - Sınıfın statik veri elemanları oluşturulacak tüm sınıf instance'ları için kullanılır.
 
@@ -1563,7 +1624,7 @@ private:
 };
 ```
 
-#### if with initialization
+### if with initialization
 
 - C++17 ile dile eklendi.
 
@@ -1583,7 +1644,7 @@ Normalde üsteki fonksiyonu C++17'den önce `int val = func(); if(val > 10){++va
 
 > patern ile idiom arasındaki fark patern genel dillerdeki kullanılabilen kalıplarken, idiom dile özgüdür. Örneğin singleton, C++ singleton, C# singleton, Java singleton... gibi örnekler paterne örnektir. C++ RAII ise bir idiom'dur sadece C++ diline özgüdür, genellik yoktur.
 
-#### Inline Variable
+### Inline Variable
 
 + C++17 ile dile eklendi.
 
@@ -1622,7 +1683,7 @@ Bir sınıf içerisinde;
 
 olacak şekilerde ifadeler tanımlanabilir.
 
-#### Nested Type
+### Nested Type
 
 ```Cpp
 class Myclass {
@@ -1654,7 +1715,9 @@ int main() {
 ```
 1'in geçersiz 2'nin geçerli olması C++'ın kurallarından kaynaklanıyor. Auto ile belirsek hata değil fakat açık bir şekilde tanımlarsak hata olacakır.
 
-#### Piml Idiom(Pointer Implementation)
+#### Piml Idiom
+
+Pointer implementation veya private implementation olarakta bilinir.
 Sınıfın private bölümünü gizlemeye yönellik geliştirilmiş bir idiom'dur.
 Ancak asıl kullanımı private bölümünü gizlemenin yanında bağımlığı azaltmasıdır. Böylelikle başlık dosyalarını, kaynak(`.cpp`) dosyasına ekleyeriz.
 
@@ -1717,7 +1780,7 @@ C Myclass::get_C() {
 }
 ```
 
-#### Composition
+### Composition
 
 Compotion ile oluşturduğumuz nesneler arasında `Has-a` relationship vardır. Örneğin Human adında bir sınıfımız var ve içerisinde Heart adında bir sınıf nesnesi barındıryor olsun ne zamanki human nesnesi sonlandırılırsa o zaman Heart nesneside sonlanacaktır. Tipik gösterimi aşağıdaki gibidir.
 
@@ -1745,7 +1808,7 @@ Hiyerarşi aşağıdaki gibidir.
 
 Her composition bir aggregation, her aggregation da bir association'dır. Fakat bunun tersi doğru değildir.
 
-#### Aggreagation
+### Aggreagation
 
 Aggreagation ile oluşturduğumuz nesneler arasında da `Has-a` relationship vardır. Fakat compotion'dan farklı olarak nesnenin hayatı sonlandığında sahip olduğu nesnenin'de hayatını sonlandırmaz. Örneğin, Team adında bir sınıfımız olsun ve içerisinde Player adında bir üye sınıf nesnesi tutuyor olsun. Aralarında has-a relationship var `Team has a player`, fakat team ile oluşturduğumuz nesnenin hayatı sonlandığında player hala hayatta olacaktır. Tipik gösterimi aşağıdaki gibidir.
 
@@ -1761,7 +1824,7 @@ private:
 ```
 
 
-#### Delegating Constructor
+### Delegating Constructor
 
 Delegating constructor ile birden fazla oluşturulan constructorlar arasında __kod tekrarı yapmamak__ için kullanılır. Default member initializer ile kullanılır.
 
@@ -1800,7 +1863,7 @@ private:
 Gördüğünüz üzere kod tekrarına düşmemekle birlikte ilk değer ile üye değişkenlerini başlatmış olduk.
 
 
-#### Raw String Literal
+### Raw String Literal
 
  Bir string literal C++'da bir ifade de kullanılacaksa sadece `const char*` olarak kullanılabilir. C'de ise bu `char[]` olarak tanımlanır. String sabitleri escape sequence'lar ile kullanılabilir.
 
@@ -2463,17 +2526,17 @@ void car_game(Car* p) {
 }
 ```
 
-#### Virtual Deconstructor
+#### Virtual Destructor
 
-Eğer base'in deconstructor'u virtual olmaz ise türemiş sınıf nesnesinin dinamik olarak oluşturup bunun adresini taban sınıf pointer'ına atarsak(upcasting)
+Eğer base'in destructor'u virtual olmaz ise türemiş sınıf nesnesinin dinamik olarak oluşturup bunun adresini taban sınıf pointer'ına atarsak(upcasting)
 ```C++
 Base* baseptr = new Der;
 ```
-fakat nesnenin görevi bitip delete edilirse, çağrılan sadece base'ın deconstructor'u olacaktır. Der'in deconstructor'u çağrılmayacak kaynaklar geri verilmeyecektir.
+fakat nesnenin görevi bitip delete edilirse, çağrılan sadece base'ın destructor'u olacaktır. Der'in destructor'u çağrılmayacak kaynaklar geri verilmeyecektir.
 
-Bir diğer problem ise new ile oluşturulan türemiş sınıf nesnesi bellekte yer ediniyor daha sonra delete ederken önce base'in deconstructor'u daha sonra C'deki free gibi olan operator delete() fonksiyonuna operator new ile elde edilen bellekteki adressi gönderiyor. Böylece o bellek alanı geri verilmiş oluyor. `delete baseptr;` taban sınıf pointeri ile taban sınıf pointerini delete operatorunun operandı yaparsanız derleyici operator delete fonksiyonuna taban sınıf nesnesinin adresinini geçecek. New operatörü geri dönüş değeri olarak oluşturulan nesnenin adresini döndürür. `baseptr` bu adresi gösterir fakat delete edilirken baseptr sınıf adresi ile türemiş sınıf adresi ancak aynı yeri gösterirse doğru sonuç olur. Bu da bir zorunluluk olmadığı için `tanımsız davranışa` sebep olacaktır.
+Bir diğer problem ise new ile oluşturulan türemiş sınıf nesnesi bellekte yer ediniyor daha sonra delete ederken önce base'in destructor'u daha sonra C'deki free gibi olan operator delete() fonksiyonuna operator new ile elde edilen bellekteki adresi gönderiyor. Böylece o bellek alanı geri verilmiş oluyor. `delete baseptr;` taban sınıf pointeri ile taban sınıf pointerini delete operatorunun operandı yaparsanız derleyici operator delete fonksiyonuna taban sınıf nesnesinin adresinini geçecek. New operatörü geri dönüş değeri olarak oluşturulan nesnenin adresini döndürür. `baseptr` bu adresi gösterir fakat delete edilirken baseptr sınıf adresi ile türemiş sınıf adresi ancak aynı yeri gösterirse doğru sonuç olur. Bu da bir zorunluluk olmadığı için `tanımsız davranışa` sebep olacaktır.
 
-Eğer türemiş sınıf nesnesini bir taban sınıf pointeri ile işlemek gibi bir niyetimiz yoksa orta da bir problem yok fakat eğer böyle bir durum söz konusu ise her zaman taban sınıf deconstructor'unu protected yapın ki yanlışlıkla client bir dinamik türemiş sınıf nesnesini taban sınıf pointerı ile yönetmeye kalkarsa setaks hatası olsun.
+Eğer türemiş sınıf nesnesini bir taban sınıf pointeri ile işlemek gibi bir niyetimiz yoksa orta da bir problem yok fakat eğer böyle bir durum söz konusu ise her zaman taban sınıf destructor'unu protected yapın ki yanlışlıkla client bir dinamik türemiş sınıf nesnesini taban sınıf pointerı ile yönetmeye kalkarsa setaks hatası olsun.
 
 ```C++
 class Base {
@@ -2483,11 +2546,11 @@ protected:
     virtual ~Base() {}
 };
 Base* baseptr = new Der;
-delete baseptr; //Sentaks hatası base deconstructor protected
+delete baseptr; //Sentaks hatası base destructor protected
 ```
 Sonuç olarak;
 
-Taban sınıfların deconstructor'u ya public virtual olacak
+Taban sınıfların destructor'u ya public virtual olacak
 ya da protected non-virtual olacaktır.
 
 
@@ -2580,9 +2643,9 @@ int main() {
     Der myder1(1.3,.45);
 }
 ```
-Der sınıfı içersinde constructor oluşturmamıza rağmen derleyici using bildirimi ile bunu bizim için gerçekleştirdi.
+Der sınıfı içersinde constructor oluşturmamamıza rağmen derleyici using bildirimi ile bunu bizim için gerçekleştirdi.
 
-Fakat Base'in constructor'ları protected yapılması durumunda sentaks hatası olur. Sınıfın üye fonksiyonlarının pretected olarak ifade edilmesine `inhereted constructor` denir. //Açıklamayı kontrol et
+Fakat Base'in constructor'ları protected yapılması durumunda sentaks hatası olur.
 
 #### Final Keyword
 Tıpkı override anahtar sözcüğünde olduğu gibi bu da bir contextual keyword'tür.
@@ -3312,7 +3375,7 @@ void func(T) = delete;
 void func(int);
 ```
 
-Eğer bir fonksiyon şablonu ya da sınıf şablonu içinde tempalte parameteresine bağlı bir nested type kullanıyorsak başına "typename" anahtar sözcüğünü koymak gerekir.
+Eğer bir fonksiyon şablonu ya da sınıf şablonu içinde template parameteresine bağlı bir nested type kullanıyorsak başına "typename" anahtar sözcüğünü koymak gerekir.
 
 ```Cpp
 template<typename T>
@@ -3358,6 +3421,8 @@ __(Explicit) Full Specialization__
 __Partial Specialization__
     
     Sınıf şablonları
+
+__(Explicit) Full Specialization__
 
 ```Cpp
 template<typename T>
@@ -3444,8 +3509,8 @@ B<100> b;
 
 #### Partial(Kısmi) Specialization
 
-Explicit specialization'da tek bir tür için alternatif kod verilirken partial specialization'da belirli özelliği sağlayan türler için alternatif kod veriyoruz.
-Örneğin tempalte argümanının pointer türü olması durumunda alternatif kod yazarsak;
+Explicit specialization'da tek bir tür için alternatif kod verilirken partial specialization'da belirli özelliği sağlayan türler için alternatif kod verir.
+Örneğin template argümanının pointer türü olması durumunda alternatif kod yazarsak;
 ```Cpp
 template<typename T>
 struct Myclass {
@@ -3468,7 +3533,7 @@ Myclass<long> x4;   //primary
 Myclass<long*> x5;  //partial spec.
 ```
 
-typedef bildirimlerini template hale getiremiyoruz fkat using bildirimi ile template hale getirebiliriz.
+typedef bildirimlerini template hale getiremiyoruz fakat using bildirimi ile template hale getirebiliriz. Buna `alias template` denir.
 
 ```Cpp
 template<typename T, typename U>
